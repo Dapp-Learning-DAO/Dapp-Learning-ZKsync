@@ -1,4 +1,4 @@
-# Lesson 1: Quick Introduction to zkSync Development and Native AA
+# Lesson 1: Quick Introduction to zkSync Development
 
 ## Quick Introduction to zkSync Development
 
@@ -50,7 +50,7 @@ npx zksync-cli create
 
 - 安装完成，项目初始化完毕，我们会看到以下输出
 
-![Lesson1_01.png](./docs/img/Lession01_01.png)
+![Lesson1_01.png](./docs/img/Lesson01_01.png)
 
 - 进入项目目录，此时能在 `./contracts` 目录中看到 `erc20` 和 `nft` 目录
 
@@ -160,7 +160,7 @@ const config: HardhatUserConfig = {
   npx zksync-cli dev start
   ```
 
-  ![Lession_02.png](./docs/img/Lession01_02.png)
+  ![Lesson_02.png](./docs/img/Lesson01_02.png)
 
 - 检查本地网络是否正常运行
 
@@ -488,7 +488,7 @@ Contract successfully verified on zkSync block explorer!
 
 - 在 zkSync Era scan 网站查看部署合约 [0x0581364e148898c641D7741094bC9123F5Cb959F](https://sepolia.explorer.zksync.io/address/0x0581364e148898c641D7741094bC9123F5Cb959F) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
 
-![Lession01_03.png](./docs/img/Lession01_03.png)
+![Lesson01_03.png](./docs/img/Lesson01_03.png)
 
 - 部署 ERC721 到 zksync-sepolia testnet, network 选择 `zkSyncSepoliaTestnet`
 
@@ -510,11 +510,13 @@ Contract successfully verified on zkSync block explorer!
 
 - 在 zkSync Era scan 网站查看部署合约 [0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778](https://sepolia.explorer.zksync.io/address/0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
 
-![Lession01_04.png](./docs/img/Lession01_04.png)
+![Lesson01_04.png](./docs/img/Lesson01_04.png)
 
 ### Deploy with foundry-zksync
 
-接下来我们将使用 Foundry 开发 ERC20, ERC721 合约，并将他们部署到 zksync-sepolia testnet 网络上。
+TBD
+
+接下来我们将使用 Foundry-zksync 开发 ERC20, ERC721 合约，并将他们部署到 zksync-sepolia testnet 网络上。
 
 - Foundry-zksync  <https://github.com/matter-labs/foundry-zksync>
 
@@ -526,7 +528,7 @@ Contract successfully verified on zkSync block explorer!
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-- Fondry-zksync 目前处于 alpha 阶段，我们需要下载源码编译安装
+- Fondry-zksync 目前处于 alpha 阶段，我们需要下载源码编译安装 `zkForge`, `zkCast`
 
 ```sh
 git clone https://github.com/matter-labs/foundry-zksync.git
@@ -538,16 +540,64 @@ cargo install --path ./crates/zkforge --profile local --force --locked
 # install zkCast
 cargo install --path ./crates/zkcast --profile local --force --locked
 
-# Entire Suite
-cargo build --release
-```
-
-- 安装 zkforge
-
-```sh
-cargo install --path ./crates/zkforge --profile local --force --locked
 ```
 
 #### 创建项目(Foundry)
+
+- `zkforge init` 初始化 zksync-foundry 项目, 如果
+
+```sh
+mkdir foundry-zksync-project
+cd foundry-zksync-project
+
+# 如果提示 `its own an already initialized git repository`
+# 可以使用 zkforge init --no-commit 跳过 git init
+zkforge init
+
+Initializing /Users/stan/workcode/DLD/Dapp-Learning-zkSync/Lesson01/foundry-zksync-project...
+Installing forge-std in /Users/stan/workcode/DLD/Dapp-Learning-zkSync/Lesson01/foundry-zksync-project/lib/forge-std (url: Some("https://github.com/foundry-rs/forge-std"), tag: None)
+Cloning into '/Users/stan/workcode/DLD/Dapp-Learning-zkSync/Lesson01/foundry-zksync-project/lib/forge-std'...
+remote: Enumerating objects: 2218, done.
+remote: Counting objects: 100% (2213/2213), done.
+remote: Compressing objects: 100% (760/760), done.
+remote: Total 2218 (delta 1476), reused 2088 (delta 1385), pack-reused 5
+Receiving objects: 100% (2218/2218), 623.28 KiB | 658.00 KiB/s, done.
+Resolving deltas: 100% (1476/1476), done.
+    Installed forge-std v1.8.1
+    Initialized forge project
+```
+
+#### 编写 ERC20, ERC721 合约
+
+- 初始化模板中未包含 ERC20, ERC721 合约，我们先将 `hardhat-zksync-project` 内的合约复制到 `foundry-zksync-project/src` 目录下
+- 复制完成后，我们需要先安装 `@openzeppelin/contracts` 依赖
+  - 使用命令 `zkforge install`
+  - 指定版本 `v4.9.2`
+
+```sh
+zkforge install OpenZeppelin/openzeppelin-contracts@v4.9.2
+Installing openzeppelin-contracts in /Users/stan/workcode/DLD/Dapp-Learning-zkSync/Lesson01/foundry-zksync-project/lib/openzeppelin-contracts (url: Some("https://github.com/OpenZeppelin/openzeppelin-contracts"), tag: Some("v4.9.2"))
+    Installed openzeppelin-contracts v4.9.2
+```
+
+- 在 `foundry.toml` 增加 remappings 配置，链接合约依赖
+
+```toml
+# foundry.toml
+...
+
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "@openzeppelin/=lib/openzeppelin-contracts/"
+]
+```
+
+- `zkforge zk-build` 命令编译合约
+
+```sh
+zkforge zk-build
+```
+
+
 
 ## Quick Introduction to Native AA
