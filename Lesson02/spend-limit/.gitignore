@@ -1,0 +1,12 @@
+artifacts-zk
+cache-zk
+local-setup
+node_modules
+.env
+package-lock.json
+yarn.lock
+
+deployments/
+deployments-zk/
+
+deploy/AAcountDeployments.json
