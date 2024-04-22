@@ -614,3 +614,11 @@ SpendLimit 合约继承自 Account 合约作为一个模块，具有以下功能
 - 每 24 小时后恢复可用的消费金额。
 
 
+#### spend-limit 架构
+
+根据上述需求我们要实现3个主要合约
+
+- `AAFactory.sol` AA账户的工厂合约，调用 `era L2 system contracts` 创建 `AAcount` 合约
+- `Account.sol` AA账户合约，主要实现交易的验证，执行功能
+- `SpendLimit.sol` 主要实现具体的业务需求逻辑
+
