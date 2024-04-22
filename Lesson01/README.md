@@ -613,12 +613,160 @@ SpendLimit 合约继承自 Account 合约作为一个模块，具有以下功能
 - 如果超出每日消费限额，则拒绝代币转移。
 - 每 24 小时后恢复可用的消费金额。
 
+#### spend-limit structure
 
-#### spend-limit 架构
+根据上述需求我们要实现 3 个主要合约
 
-根据上述需求我们要实现3个主要合约
+- `AAFactory.sol` AA 账户的工厂合约，调用 `era L2 system contracts` 创建 `AAcount` 合约
 
-- `AAFactory.sol` AA账户的工厂合约，调用 `era L2 system contracts` 创建 `AAcount` 合约
-- `Account.sol` AA账户合约，主要实现交易的验证，执行功能
+```solidity
+contract AAFactory {
+    ...
+
+    function deployAccount(
+        bytes32 salt,
+        address owner
+    ) external returns (address accountAddress) {
+        // call L2 sysmtem contract deploy AAcount
+        ...
+    }
+}
+```
+
+- `Account.sol` AA 账户合约，主要实现交易的验证，执行功能
+  - `validateTransaction` 验证交易合法，包括验证 nonce，gas 是否充足，签名是否合法
+  - `executeTransaction` 执行交易逻辑，这里需要区分交易目标是否为系统合约 (调用系统合约需要专用的函数，例如 `systemCallWithPropagatedRevert`)
+  - `payForTransaction` 当 AA 账户没有指定 Paymaster 时，系统合约将调用此方法收取 gas 费用
+  - `prepareForPaymaster` 当 AA 账户指定了 Paymaster 时，系统合约将调用此方法收取 gas 费用，gas 费用由 Paymster 支付
+
+```solidity
+contract Account is IAccount, IERC1271, SpendLimit {
+    ...
+
+    function validateTransaction(
+        bytes32,
+        bytes32 _suggestedSignedHash,
+        Transaction calldata _transaction
+    ) external payable override onlyBootloader returns (bytes4 magic) {
+        ...
+    }
+
+    function executeTransaction(
+        bytes32,
+        bytes32,
+        Transaction calldata _transaction
+    ) external payable override onlyBootloader {
+      ...
+    }
+
+    function payForTransaction(
+        bytes32,
+        bytes32,
+        Transaction calldata _transaction
+    ) external payable override onlyBootloader {
+        ...
+    }
+
+    function prepareForPaymaster(
+        bytes32, // _txHash
+        bytes32, // _suggestedSignedHash
+        Transaction calldata _transaction
+    ) external payable override onlyBootloader {
+        ...
+    }
+
+    ...
+}
+```
+
 - `SpendLimit.sol` 主要实现具体的业务需求逻辑
+  - `modifier onlyAccount` 限制接口只能由 AAcount 合约自身调用，即让用户的所有请求必须通过 AA 的调用方式
+  - `setSpendingLimit` 设置每日消费(ETH 转账)上限
+  - `removeSpendingLimit` 删除消费上限(设置为 0)
+  - `isValidUpdate` 检验上限设置是否合规 (只有两种情况可以修改上限，新上限没有超出当天剩余可消费额度或者时间超过 24 小时)
+  - `_updateLimit` 更新可消费余额
+  - `_checkSpendingLimit` 检查剩余可消费余额是否足够支付本次消费
 
+```solidity
+contract SpendLimit {
+
+    uint public ONE_DAY = 24 hours;
+
+    modifier onlyAccount() {
+        require(
+            msg.sender == address(this),
+            "Only the account that inherits this contract can call this method."
+        );
+        _;
+    }
+
+    /// This struct serves as data storage of daily spending limits users enable
+    /// limit: the amount of a daily spending limit
+    /// available: the available amount that can be spent
+    /// resetTime: block.timestamp at the available amount is restored
+    /// isEnabled: true when a daily spending limit is enabled
+    struct Limit {
+        uint limit;
+        uint available;
+        uint resetTime;
+        bool isEnabled;
+    }
+
+    function setSpendingLimit(address _token, uint _amount) public onlyAccount {}
+
+    function removeSpendingLimit(address _token) public onlyAccount {}
+
+    function isValidUpdate(address _token) internal view returns(bool) {}
+
+    function _updateLimit(address _token, uint _limit, uint _available, uint _resetTime, bool _isEnabled) private {}
+
+    function _checkSpendingLimit(address _token, uint _amount) internal {}
+
+}
+```
+
+#### spend-limit Account contract
+
+Account 合约是整个 native AA 流程的关键合约，必须继承 `IAccount` 接口，必须实现的接口
+
+- `validateTransaction` 必须实现
+- `executeTransaction` 必须实现
+- `payForTransaction` 和 `prepareForPaymaster` 必须至少实现 1 个
+- `executeTransactionFromOutside` 非必需，但强烈建议实现
+
+下面我们来看看具体的实现逻辑
+
+**`validateTransaction`**
+
+当用户广播了一条 native AA 交易后，系统合约会调用 AAcount 合约的 `validateTransaction` 接口
+
+1. 调用系统合约的 `NonceHolder` 合约的 `incrementMinNonceIfEquals` 方法，该方法会检查 AAcount 的 nonce，并自动加一
+2. 检查账户余额是否足够支付本次交易 gas
+3. 检查交易签名是否合法（`ecrecover(_hash, v, r, s) == owner`）
+
+**`payForTransaction`**
+
+1. `transaction.payToTheBootloader()` 向系统合约支付 gas， `payToTheBootloader` 是 L2 system contract `TransactionHelper` 提供的方法
+
+```solidity
+import "@matterlabs/zksync-contracts/l2/system-contracts/libraries/TransactionHelper.sol";
+
+contract Account is IAccount, IERC1271, SpendLimit {
+  using TransactionHelper for Transaction;
+}
+```
+
+**`prepareForPaymaster`**
+
+1. `transaction.processPaymasterInput()` 由 Paymaster 向系统合约支付 gas，同上， `processPaymasterInput` 是 L2 system contract `TransactionHelper` 提供的方法
+
+**`executeTransaction`**
+
+根据交易是否调用系统合约需要区分调用方式
+
+1. 调用系统合约 `DEPLOYER_SYSTEM_CONTRACT` 需要使用特定方法，例如 `SystemContractsCaller.systemCallWithPropagatedRevert`
+2. 其他情况直接使用 Yul 的 call 语句调用
+
+**`executeTransactionFromOutside`**
+
+非强制实现，当该接口可以允许来自非系统合约的调用
