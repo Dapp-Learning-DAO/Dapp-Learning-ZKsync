@@ -518,7 +518,7 @@ TBD
 
 接下来我们将使用 Foundry-zksync 开发 ERC20, ERC721 合约，并将他们部署到 zksync-sepolia testnet 网络上。
 
-- Foundry-zksync  <https://github.com/matter-labs/foundry-zksync>
+- Foundry-zksync <https://github.com/matter-labs/foundry-zksync>
 
 #### 安装 foundry-zksync
 
@@ -598,5 +598,19 @@ remappings = [
 zkforge zk-build
 ```
 
+## Quick Introduction to Native AA
+
+![zksync-AA-tx-flow.svg](./docs/img/zksync-AA-tx-flow.svg)
+
+### spend-limit
+
+现在，让我们深入探讨每日消费限额功能的设计与实现，该功能可以帮助防止账户超出其所有者设定的限额（以 ETH 为例）进行消费。
+
+SpendLimit 合约继承自 Account 合约作为一个模块，具有以下功能：
+
+- 允许账户启用/禁用某种代币（本例中为 ETH）的每日消费限额。
+- 允许账户更改（增加/减少或移除）每日消费限额。
+- 如果超出每日消费限额，则拒绝代币转移。
+- 每 24 小时后恢复可用的消费金额。
 
 

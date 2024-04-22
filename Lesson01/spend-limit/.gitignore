@@ -6,7 +6,4 @@ node_modules
 package-lock.json
 yarn.lock
 
-deployments/
-deployments-zk/
-
-deploy/AAcountDeployments.json
+AAcountDeployments.json

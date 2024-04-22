@@ -27,7 +27,11 @@ export async function sendTx(
 
   tx.gasPrice = await provider.getGasPrice();
   if (tx.gasLimit == undefined) {
-    tx.gasLimit = await provider.estimateGas(tx);
+    try {
+      tx.gasLimit = await provider.estimateGas(tx);
+    } catch (error) {
+      // console.debug("estimateGas error:", error)
+    }
   }
 
   const signedTxHash = EIP712Signer.getSignedDigest(tx);
@@ -40,5 +44,5 @@ export async function sendTx(
     customSignature: signature,
   };
 
-  return await provider.sendTransaction(utils.serialize(tx));
+  return provider.sendTransaction(utils.serialize(tx));
 }

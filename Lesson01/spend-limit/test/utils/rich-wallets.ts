@@ -1,33 +1,33 @@
 export const rich_wallet = [
   {
-    address: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
+    address: "0xBC989fDe9e54cAd2aB4392Af6dF60f04873A033A",
     privateKey:
-      "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110",
+      "0x3d3cbc973389cb26f657686445bcc75662b415b656078503592ac8c1abb8810e",
   },
   {
-    address: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
+    address: "0x55bE1B079b53962746B2e86d12f158a41DF294A6",
     privateKey:
-      "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3",
+      "0x509ca2e9e6acf0ba086477910950125e698d4ea70fa6f63e000c5a22bda9361c",
   },
   {
-    address: "0x0D43eB5B8a47bA8900d84AA36656c92024e9772e",
+    address: "0xCE9e6063674DC585F6F3c7eaBe82B9936143Ba6C",
     privateKey:
-      "0xd293c684d884d56f8d6abd64fc76757d3664904e309a0645baf8522ab6366d9e",
+      "0x71781d3a358e7a65150e894264ccc594993fbc0ea12d69508a340bc1d4f5bfbc",
   },
   {
-    address: "0xA13c10C0D5bd6f79041B9835c63f91de35A15883",
+    address: "0xd986b0cB0D1Ad4CCCF0C4947554003fC0Be548E9",
     privateKey:
-      "0x850683b40d4a740aa6e745f889a6fdc8327be76e122f5aba645a5b02d0248db8",
+      "0x379d31d4a7031ead87397f332aab69ef5cd843ba3898249ca1046633c0c7eefe",
   },
   {
-    address: "0x8002cD98Cfb563492A6fB3E7C8243b7B9Ad4cc92",
+    address: "0x87d6ab9fE5Adef46228fB490810f0F5CB16D6d04",
     privateKey:
-      "0xf12e28c0eb1ef4ff90478f6805b68d63737b7f33abfa091601140805da450d93",
+      "0x105de4e75fe465d075e1daae5647a02e3aad54b8d23cf1f70ba382b9f9bee839",
   },
   {
-    address: "0x4F9133D1d3F50011A6859807C837bdCB31Aaab13",
+    address: "0x78cAD996530109838eb016619f5931a03250489A",
     privateKey:
-      "0xe667e57a9b8aaa6709e51ff7d093f1c5b73b63f9987e4ab4aa9a5c699e024ee8",
+      "0x7becc4a46e0c3b512d380ca73a4c868f790d1055a7698f38fb3ca2b2ac97efbb",
   },
   {
     address: "0xbd29A1B981925B94eEc5c4F1125AF02a2Ec4d1cA",

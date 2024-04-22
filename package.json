@@ -1,0 +1,20 @@
+{
+  "name": "dapp-learning-zksync",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "Lesson01/hardhat-zksync-project",
+    "Lesson01/spend-limit"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "zksync",
+    "ethereum"
+  ],
+  "author": "dapp-learning",
+  "license": "MIT"
+}
