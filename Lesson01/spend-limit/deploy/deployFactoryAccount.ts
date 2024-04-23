@@ -7,13 +7,10 @@ import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 
 // load env file
 import dotenv from "dotenv";
-import { deployContract, getProvider, getWallet, LOCAL_RICH_WALLETS } from "./utils";
+import { deployContract, getWallet } from "./utils";
 dotenv.config();
 
 export default async function (hre: HardhatRuntimeEnvironment) {
-
-  // @ts-ignore target zkSyncSepoliaTestnet in config file which can be testnet or local
-  // const provider = new Provider(hre.config.networks.inMemoryNode.url);
   const wallet = getWallet();
   const deployer = new Deployer(hre, wallet);
   const factoryArtifact = await deployer.loadArtifact("AAFactory");
@@ -48,7 +45,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("SC Account owner pk: ", owner.privateKey);
 
   const salt = ethers.ZeroHash;
-  const tx = await aaFactory.deployAccount(salt, owner.address);
+
+  const tx = await aaFactory.deployAccount(salt, owner.address, {gasLimit: 800000});
   await tx.wait();
 
   const abiCoder = new ethers.AbiCoder();

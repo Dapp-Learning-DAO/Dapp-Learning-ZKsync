@@ -1,7 +1,7 @@
 import { Wallet, Contract, utils } from "zksync-ethers";
 import * as hre from "hardhat";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import { ethers } from "ethers";
+import { HDNodeWallet, ethers } from "ethers";
 
 export async function deployAAFactory(wallet: Wallet): Promise<Contract> {
   let deployer: Deployer = new Deployer(hre, wallet);
@@ -27,12 +27,12 @@ export async function deployAccount(
     wallet,
   );
 
-  const salt = ethers.constants.HashZero;
+  const salt = ethers.ZeroHash;
   await (await factory.deployAccount(salt, owner.address)).wait();
 
-  const AbiCoder = new ethers.utils.AbiCoder();
+  const AbiCoder = new ethers.AbiCoder();
   const account_address = utils.create2Address(
-    factory.address,
+    await factory.getAddress(),
     await factory.aaBytecodeHash(),
     salt,
     AbiCoder.encode(["address"], [owner.address]),

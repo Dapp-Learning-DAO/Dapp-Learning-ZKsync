@@ -12,13 +12,14 @@ export async function sendTx(
   provider: Provider,
   account: Contract,
   user: Wallet,
-  tx: any,
+  tx: any
 ) {
+  const accountAddress = await account.getAddress();
   tx = {
     ...tx,
-    from: account.address,
+    from: accountAddress,
     chainId: (await provider.getNetwork()).chainId,
-    nonce: await provider.getTransactionCount(account.address),
+    nonce: await provider.getTransactionCount(accountAddress),
     type: 113,
     customData: {
       gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
@@ -35,14 +36,14 @@ export async function sendTx(
   }
 
   const signedTxHash = EIP712Signer.getSignedDigest(tx);
-  const signature = ethers.utils.arrayify(
-    ethers.utils.joinSignature(user._signingKey().signDigest(signedTxHash)),
-  );
+  const signature = ethers.concat([
+    ethers.Signature.from(user.signingKey.sign(signedTxHash)).serialized,
+  ]);
 
   tx.customData = {
     ...tx.customData,
     customSignature: signature,
   };
 
-  return provider.sendTransaction(utils.serialize(tx));
+  return provider.broadcastTransaction(types.Transaction.from(tx).serialized);
 }

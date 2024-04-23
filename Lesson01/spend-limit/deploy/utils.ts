@@ -30,7 +30,7 @@ export const getWallet = (privateKey?: string) => {
     // Get wallet private key from .env file
     if (!isLocalNetwork && !process.env.WALLET_PRIVATE_KEY)
       throw "⛔️ Wallet private key wasn't found in .env file!";
-    
+
     privateKey = isLocalNetwork
       ? LOCAL_RICH_WALLETS[0].privateKey
       : process.env.WALLET_PRIVATE_KEY;
@@ -157,14 +157,14 @@ export const deployContract = async (
  */
 export const LOCAL_RICH_WALLETS = [
   {
-    address: "0x36615Cf349d7F6344891B1e7CA7C72883F5dc049",
+    address: "0xBC989fDe9e54cAd2aB4392Af6dF60f04873A033A",
     privateKey:
-      "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110",
+      "0x3d3cbc973389cb26f657686445bcc75662b415b656078503592ac8c1abb8810e",
   },
   {
-    address: "0xa61464658AfeAf65CccaaFD3a512b69A83B77618",
+    address: "0x55bE1B079b53962746B2e86d12f158a41DF294A6",
     privateKey:
-      "0xac1e735be8536c6534bb4f17f06f6afc73b2b5ba84ac2cfb12f7461b20c0bbe3",
+      "0x509ca2e9e6acf0ba086477910950125e698d4ea70fa6f63e000c5a22bda9361c",
   },
   {
     address: "0x0D43eB5B8a47bA8900d84AA36656c92024e9772e",

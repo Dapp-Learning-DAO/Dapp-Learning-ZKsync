@@ -770,3 +770,120 @@ contract Account is IAccount, IERC1271, SpendLimit {
 **`executeTransactionFromOutside`**
 
 非强制实现，当该接口可以允许来自非系统合约的调用
+
+#### spend-limit scripts
+
+- 部署合约
+  1. 部署 `AAFactory` 合约
+  2. 生成一个新的随机钱包作为 owner (AA 用户, 即 Account 合约的 owner)，记录密钥和地址
+  3. 调用 `AAFactory.deployAccount` 方法创建 Account 合约
+  4. 向 `Acount` 合约转入 ETH 作为账户资金
+
+```sh
+yarn hardhat deploy-zksync --script deployFactoryAccount.ts --network zkSyncSepoliaTestnet
+
+# output
+Starting deployment process of "AAFactory"...
+Estimated deployment cost: 0.0000429924 ETH
+
+"AAFactory" was successfully deployed:
+ - Contract address: 0x9E942Ad7fbC3d24E29629e738879223280d58815
+ - Contract source: contracts/AAFactory.sol:AAFactory
+ - Encoded constructor arguments: 0x01000693cded8d0742a9c58d269a6df47f3ce61a83b7b136c283fdf45e93e214
+
+Requesting contract verification...
+Your verification ID is: 11257
+Contract successfully verified on zkSync block explorer!
+AA factory address: 0x9E942Ad7fbC3d24E29629e738879223280d58815
+SC Account owner pk:  0x72...20
+SC Account deployed on address 0x91Bb8775820e0Bc20d8E89a84aB67Ce540c464b3
+Funding smart contract account with some ETH
+Done!
+✨  Done in 23.72s.
+```
+
+- 为用户设置消费上限
+
+  1. 使用 owner 的 privatekey 初始化 `Wallet` 对象，用户交易签名
+  2. 获取 `Account.setSpendingLimit` 调用交易，并根据 native AA 格式组装
+     a. from 是 Account 合约
+     b. nonce 是 Account 的 nonce
+     c. type 113
+     d. customData 包含 `signature` 签名和 gas 相关参数
+
+  3. 使用 `provider.broadcastTransaction` 广播交易，交易将被系统自动转发给 system contract，开始 native AA 流程
+
+  ```ts
+  let setLimitTx = await account.setSpendingLimit.populateTransaction(
+    ETH_ADDRESS,
+    ethers.parseEther("0.0005")
+  );
+
+  setLimitTx = {
+    ...setLimitTx,
+    from: DEPLOYED_ACCOUNT_ADDRESS,
+    chainId: (await provider.getNetwork()).chainId,
+    nonce: await provider.getTransactionCount(DEPLOYED_ACCOUNT_ADDRESS),
+    type: 113,
+    customData: {
+      gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+    } as types.Eip712Meta,
+    value: BigInt(0),
+  };
+
+  setLimitTx.gasPrice = await provider.getGasPrice();
+  setLimitTx.gasLimit = await provider.estimateGas(setLimitTx);
+
+  const signedTxHash = EIP712Signer.getSignedDigest(setLimitTx);
+
+  const signature = ethers.concat([
+    ethers.Signature.from(owner.signingKey.sign(signedTxHash)).serialized,
+  ]);
+
+  setLimitTx.customData = {
+    ...setLimitTx.customData,
+    customSignature: signature,
+  };
+  ```
+
+```sh
+yarn hardhat deploy-zksync --script setLimit.ts --network zkSyncSepoliaTestnet
+
+# output
+Setting limit for account...
+Account limit enabled?:  true
+Account limit:  500000000000000
+Available limit today:  500000000000000
+Time to reset limit:  1713844093
+✨  Done in 5.63s.
+```
+
+- 触发 AAcount 转账
+  1. 使用 owner 的 privatekey 初始化 `Wallet` 对象，用户交易签名
+  2. 我们将触发Account合约向另一个账户转账，组装交易并签名
+    a. from 是 Account 合约, to 是转账目标账户
+    b. nonce 是 Account 的 nonce
+    c. type 113
+    d. customData 包含 `signature` 签名和 gas 相关参数
+    e. value 设置将要转账的金额，注意不要超过刚才设置的上限
+  3. 使用 `provider.broadcastTransaction` 广播交易，交易将被系统自动转发给 system contract，开始 native AA 流程
+
+```sh
+yarn hardhat deploy-zksync --script setLimit.ts --network zkSyncSepoliaTestnet
+
+# output
+Account ETH limit is:  5000000000000000
+Available today:  5000000000000000
+Limit will reset on timestamp:  1713844093
+Sending ETH transfer from smart contract account
+ETH transfer tx hash is 0x525850760c12490fe3d665e4e8a0406e165f2d71272f775481d9ed3cff696693
+Transfer completed and limits updated!
+Account limit:  5000000000000000
+Available today:  0
+Limit will reset on timestamp: 1713844243
+Current timestamp:  1713844185
+Reset time was not updated as not enough time has passed
+✨  Done in 4.67s.
+```
+
+- 此时我们如果再次发起转账，将会revert，得到 "Exceed daily limit" 的报错信息，显示我们今日触及消费上限，不能继续转账

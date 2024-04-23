@@ -35,7 +35,7 @@ contract Account is IAccount, IERC1271, SpendLimit {
     }
 
     function validateTransaction(
-        bytes32 _txHash,
+        bytes32,
         bytes32 _suggestedSignedHash,
         Transaction calldata _transaction
     ) external payable override onlyBootloader returns (bytes4 magic) {

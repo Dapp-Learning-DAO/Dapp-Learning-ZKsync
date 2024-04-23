@@ -43,7 +43,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const owner = new Wallet(DEPLOYED_ACCOUNT_OWNER_PRIVATE_KEY, provider);
 
   // ⚠️ update this amount to test if the limit works; 0.00051 fails but 0.00049 succeeds
-  const transferAmount = "0.000051";
+  const transferAmount = "0.00050";
 
   let ethTransferTx = {
     from: DEPLOYED_ACCOUNT_ADDRESS,

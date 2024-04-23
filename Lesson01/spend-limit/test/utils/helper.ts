@@ -1,14 +1,14 @@
-import { ethers, BigNumber } from "ethers";
-import { Wallet } from "zksync-ethers";
+import { Contract, ethers } from "ethers";
+import { Provider, Wallet } from "zksync-ethers";
 
-export const toBN = (x: string): BigNumber => {
-  return ethers.utils.parseEther(x);
+export const toBN = (x: string): bigint => {
+  return ethers.parseEther(x);
 };
 
 export const Tx = (wallet: Wallet, value: string) => {
   return {
     to: wallet.address,
-    value: ethers.utils.parseEther(value),
+    value: ethers.parseEther(value),
     data: "0x",
   };
 };
@@ -58,10 +58,10 @@ export async function consoleAddreses(wallet, factory, account, user) {
   );
 }
 
-export async function getBalances(provider, wallet, account, user) {
-  const WalletETHBal = await provider.getBalance(wallet.address);
-  const AccountETHBal = await provider.getBalance(account.address);
-  const UserETHBal = await provider.getBalance(user.address);
+export async function getBalances(provider: Provider, wallet: Wallet, account: Contract, user: Wallet) {
+  const WalletETHBal = await provider.getBalance(await wallet.getAddress());
+  const AccountETHBal = await provider.getBalance(await account.getAddress());
+  const UserETHBal = await provider.getBalance(await user.getAddress());
 
   // console.log(
   //     '\n',
