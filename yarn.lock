@@ -231,7 +231,21 @@
     "@jridgewell/resolve-uri" "^3.0.3"
     "@jridgewell/sourcemap-codec" "^1.4.10"
 
-"@matterlabs/hardhat-zksync-deploy@^1.1.2":
+"@matterlabs/hardhat-zksync-chai-matchers@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.npmjs.org/@matterlabs/hardhat-zksync-chai-matchers/-/hardhat-zksync-chai-matchers-1.3.0.tgz#361dc4bbb09dd416196457c5899723924a037660"
+  integrity sha512-jieTyf1AlVyGk3mjhvu6yIdkL+52EEpJo4vC1WrL/UZOcJmUMXGD9Xx5zT1DEcGHKLxdD9Fz7+rajKX/Y7hNDg==
+  dependencies:
+    "@matterlabs/hardhat-zksync-deploy" "^1.2.0"
+    "@matterlabs/hardhat-zksync-solc" "^1.1.3"
+    chai "^4.3.7"
+    chai-as-promised "^7.1.1"
+    ethers "^6.7.1"
+    hardhat "^2.19.4"
+    ordinal "1.0.3"
+    zksync-ethers "^6.0.0"
+
+"@matterlabs/hardhat-zksync-deploy@^1.1.2", "@matterlabs/hardhat-zksync-deploy@^1.2.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@matterlabs/hardhat-zksync-deploy/-/hardhat-zksync-deploy-1.3.0.tgz#5c2b723318ddf6c4d3929ec225401864ff54557a"
   integrity sha512-4UHOgOwIBC4JA3W8DE9GHqbAuBhCPAjtM+Oew1aiYYGkIsPUAMYsH35+4I2FzJsYyE6mD6ATmoS/HfZweQHTlQ==
@@ -246,7 +260,7 @@
     sinon-chai "^3.7.0"
     ts-morph "^21.0.1"
 
-"@matterlabs/hardhat-zksync-node@^1.0.1":
+"@matterlabs/hardhat-zksync-node@^1.0.0", "@matterlabs/hardhat-zksync-node@^1.0.1":
   version "1.0.3"
   resolved "https://registry.npmjs.org/@matterlabs/hardhat-zksync-node/-/hardhat-zksync-node-1.0.3.tgz#54a8320f912e201ff00aa7aea8a7496a3480f323"
   integrity sha512-NPJU8yjaM6OUNQSatEeRkd6gn5kfvv23BlNVuF1vWMfw0Vo5HWM3jx4josRbgzlx2byzNeXDyBHZXNsohOhSVw==
@@ -261,7 +275,7 @@
     sinon-chai "^3.7.0"
     undici "^5.14.0"
 
-"@matterlabs/hardhat-zksync-solc@^1.0.4", "@matterlabs/hardhat-zksync-solc@^1.0.5", "@matterlabs/hardhat-zksync-solc@^1.0.6", "@matterlabs/hardhat-zksync-solc@^1.1.4":
+"@matterlabs/hardhat-zksync-solc@^1.0.4", "@matterlabs/hardhat-zksync-solc@^1.0.5", "@matterlabs/hardhat-zksync-solc@^1.0.6", "@matterlabs/hardhat-zksync-solc@^1.1.3", "@matterlabs/hardhat-zksync-solc@^1.1.4":
   version "1.1.4"
   resolved "https://registry.npmjs.org/@matterlabs/hardhat-zksync-solc/-/hardhat-zksync-solc-1.1.4.tgz#04a2fad6fb6b6944c64ad969080ee65b9af3f617"
   integrity sha512-4/usbogh9neewR2/v8Dn2OzqVblZMUuT/iH2MyPZgPRZYQlL4SlZtMvokU9UQjZT6iSoaKCbbdWESHDHSzfUjA==
@@ -278,7 +292,7 @@
     sinon-chai "^3.7.0"
     undici "^5.14.0"
 
-"@matterlabs/hardhat-zksync-verify@^1.2.2":
+"@matterlabs/hardhat-zksync-verify@^1.2.2", "@matterlabs/hardhat-zksync-verify@^1.4.0":
   version "1.4.2"
   resolved "https://registry.npmjs.org/@matterlabs/hardhat-zksync-verify/-/hardhat-zksync-verify-1.4.2.tgz#095af84021ad775ae45df3a94c95efd2528714ab"
   integrity sha512-GKdb4/5Xx5O9AbwtUnKQELxzVrWzv8HzZtvTJulekNe7+zy43O4AYb0uOjD6jbGRBoTGjWektlh0JYdAHJEdZQ==
@@ -445,6 +459,16 @@
     deep-eql "^4.0.1"
     ordinal "^1.0.3"
 
+"@nomicfoundation/hardhat-chai-matchers@^2.0.1":
+  version "2.0.6"
+  resolved "https://registry.npmjs.org/@nomicfoundation/hardhat-chai-matchers/-/hardhat-chai-matchers-2.0.6.tgz#ef88be3bd666adf29c06ac7882e96c8dbaaa32ba"
+  integrity sha512-Te1Uyo9oJcTCF0Jy9dztaLpshmlpjLf2yPtWXlXuLjMt3RRSmJLm/+rKVTW6gfadAEs12U/it6D0ZRnnRGiICQ==
+  dependencies:
+    "@types/chai-as-promised" "^7.1.3"
+    chai-as-promised "^7.1.1"
+    deep-eql "^4.0.1"
+    ordinal "^1.0.3"
+
 "@nomicfoundation/hardhat-verify@^2.0.0":
   version "2.0.6"
   resolved "https://registry.npmjs.org/@nomicfoundation/hardhat-verify/-/hardhat-verify-2.0.6.tgz#02623c431244c92a852c524008239fc616e1c658"
@@ -535,7 +559,7 @@
     fs-extra "^7.0.1"
     node-fetch "^2.6.0"
 
-"@nomiclabs/hardhat-ethers@^2.0.0":
+"@nomiclabs/hardhat-ethers@^2.0.0", "@nomiclabs/hardhat-ethers@^2.2.3":
   version "2.2.3"
   resolved "https://registry.npmjs.org/@nomiclabs/hardhat-ethers/-/hardhat-ethers-2.2.3.tgz#b41053e360c31a32c2640c9a45ee981a7e603fe0"
   integrity sha512-YhzPdzb612X591FOe68q+qXVXGG2ANZRvDo0RRUtimev85rCrAlv/TLMEZw5c+kq9AbzocLTVX/h2jVIFPL9Xg==
@@ -561,7 +585,7 @@
   resolved "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.9.5.tgz#1eed23d4844c861a1835b5d33507c1017fa98de8"
   integrity sha512-ZK+W5mVhRppff9BE6YdR8CC52C8zAvsVAiWhEtQ5+oNxFE6h1WdeWo+FJSF8KKvtxxVYZ7MTP/5KoVpAU3aSWg==
 
-"@openzeppelin/contracts@^4.9.2":
+"@openzeppelin/contracts@^4.7.3", "@openzeppelin/contracts@^4.9.2":
   version "4.9.6"
   resolved "https://registry.npmjs.org/@openzeppelin/contracts/-/contracts-4.9.6.tgz#2a880a24eb19b4f8b25adc2a5095f2aa27f39677"
   integrity sha512-xSmezSupL+y9VkHZJGDoCBpmnB2ogM13ccaYDWqJTfS3dbuHkgjuwDFUmaFauBCboQMGB/S5UqUl2y54X99BmA==
@@ -747,7 +771,7 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai@*", "@types/chai@^4.3.4":
+"@types/chai@*", "@types/chai@^4.3.4", "@types/chai@^4.3.5":
   version "4.3.14"
   resolved "https://registry.npmjs.org/@types/chai/-/chai-4.3.14.tgz#ae3055ea2be43c91c9fd700a36d67820026d96e6"
   integrity sha512-Wj71sXE4Q4AkGdG9Tvq1u/fquNz9EdG4LIJMwVVII7ashjD/8cf8fyIfJAjRr6YcsXnSE8cOGQPq1gqeR8z+3w==
@@ -1452,7 +1476,7 @@ dockerode@^4.0.2:
     docker-modem "^5.0.3"
     tar-fs "~2.0.1"
 
-dotenv@^16.0.3:
+dotenv@^16.0.3, dotenv@^16.3.1:
   version "16.4.5"
   resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.5.tgz#cdd3b3b604cb327e286b4762e13502f717cb099f"
   integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
@@ -1585,7 +1609,7 @@ ethereumjs-util@^6.0.0, ethereumjs-util@^6.2.1:
     ethjs-util "0.1.6"
     rlp "^2.2.3"
 
-ethers@^6.9.2:
+ethers@^6.7.1, ethers@^6.7.2, ethers@^6.9.2:
   version "6.12.0"
   resolved "https://registry.npmjs.org/ethers/-/ethers-6.12.0.tgz#b0c2ce207ae5a3b5125be966e32ffea7c1f2481a"
   integrity sha512-zL5NlOTjML239gIvtVJuaSk0N9GQLi1Hom3ZWUszE5lDTQE/IVB62mrPkQ2W1bGcZwVGSLaetQbWNQSvI4rGDQ==
@@ -1821,7 +1845,7 @@ graceful-fs@^4.1.2, graceful-fs@^4.1.6, graceful-fs@^4.1.9, graceful-fs@^4.2.0, 
   resolved "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz#4183e4e8bf08bb6e05bbb2f7d2e0c8f712ca40e3"
   integrity sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==
 
-hardhat@^2.12.4, hardhat@^2.19.4:
+hardhat@^2.12.0, hardhat@^2.12.4, hardhat@^2.19.4:
   version "2.22.3"
   resolved "https://registry.npmjs.org/hardhat/-/hardhat-2.22.3.tgz#50605daca6b29862397e446c42ec14c89430bec3"
   integrity sha512-k8JV2ECWNchD6ahkg2BR5wKVxY0OiKot7fuxiIpRK0frRqyOljcR2vKwgWSLw6YIeDcNNA4xybj7Og7NSxr2hA==
@@ -2409,7 +2433,7 @@ once@^1.3.0, once@^1.3.1, once@^1.4.0:
   dependencies:
     wrappy "1"
 
-ordinal@^1.0.3:
+ordinal@1.0.3, ordinal@^1.0.3:
   version "1.0.3"
   resolved "https://registry.npmjs.org/ordinal/-/ordinal-1.0.3.tgz#1a3c7726a61728112f50944ad7c35c06ae3a0d4d"
   integrity sha512-cMddMgb2QElm8G7vdaa02jhUNbTSrhsgAGUz1OokD83uJTwSUn+nKoNoKVVaRa08yF6sgfO7Maou1+bgLd9rdQ==
@@ -2522,6 +2546,11 @@ picomatch@^2.0.4, picomatch@^2.2.1, picomatch@^2.3.1:
   version "2.3.1"
   resolved "https://registry.npmjs.org/picomatch/-/picomatch-2.3.1.tgz#3ba3833733646d9d3e4995946c1365a67fb07a42"
   integrity sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==
+
+prettier@^3.0.0:
+  version "3.2.5"
+  resolved "https://registry.npmjs.org/prettier/-/prettier-3.2.5.tgz#e52bc3090586e824964a8813b09aba6233b28368"
+  integrity sha512-3/GWa9aOC0YeD7LUfvOG2NiDyhOWRvt1k+rcKhOuYnMY24iiCphgneUfJDyFXd6rZCAnuLBv6UeAULtrhT/F4A==
 
 process-nextick-args@~2.0.0:
   version "2.0.1"
@@ -3133,7 +3162,7 @@ typedarray@^0.0.6:
   resolved "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
-typescript@^4.9.5:
+typescript@^4.8.4, typescript@^4.9.5:
   version "4.9.5"
   resolved "https://registry.npmjs.org/typescript/-/typescript-4.9.5.tgz#095979f9bcc0d09da324d58d03ce8f8374cbe65a"
   integrity sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==
@@ -3310,7 +3339,7 @@ yocto-queue@^0.1.0:
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz#0294eb3dee05028d31ee1a5fa2c556a6aaf10a1b"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
 
-zksync-ethers@^6.0.0:
+zksync-ethers@^6.0.0, zksync-ethers@^6.4.0:
   version "6.7.0"
   resolved "https://registry.npmjs.org/zksync-ethers/-/zksync-ethers-6.7.0.tgz#2501777bb7db245603167621a0b039ea737ef913"
   integrity sha512-9kiWRmL4O6SH2WRzpglIqh7+UFbVFjnounRNr1CGymmHCC6ygg9Pamr8SCuvQLAxlYkEwCuDUphNTKkGtvh/Kg==

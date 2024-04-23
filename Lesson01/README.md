@@ -861,11 +861,11 @@ Time to reset limit:  1713844093
 - 触发 AAcount 转账
   1. 使用 owner 的 privatekey 初始化 `Wallet` 对象，用户交易签名
   2. 我们将触发Account合约向另一个账户转账，组装交易并签名
-    a. from 是 Account 合约, to 是转账目标账户
-    b. nonce 是 Account 的 nonce
-    c. type 113
-    d. customData 包含 `signature` 签名和 gas 相关参数
-    e. value 设置将要转账的金额，注意不要超过刚才设置的上限
+     a. from 是 Account 合约, to 是转账目标账户
+     b. nonce 是 Account 的 nonce
+     c. type 113
+     d. customData 包含 `signature` 签名和 gas 相关参数
+     e. value 设置将要转账的金额，注意不要超过刚才设置的上限
   3. 使用 `provider.broadcastTransaction` 广播交易，交易将被系统自动转发给 system contract，开始 native AA 流程
 
 ```sh
@@ -887,3 +887,113 @@ Reset time was not updated as not enough time has passed
 ```
 
 - 此时我们如果再次发起转账，将会revert，得到 "Exceed daily limit" 的报错信息，显示我们今日触及消费上限，不能继续转账
+
+### Custom-Paymaster
+
+接下来我们将构建一个自定义支付代理（paymaster），允许用户使用任何 ERC20 代币支付 gas 费用：
+
+1. 创建一个支付代理，假设单个单位的 ERC20 代币足以覆盖任何交易费用。
+2. 创建 ERC20 代币合约，并向一个新钱包发送一些代币。
+3. 通过支付代理发送一笔铸造交易，从新创建的钱包发起。尽管该交易通常需要使用 ETH 来支付燃料费，但我们的支付代理将以 1 单位的 ERC20 代币交换执行该交易。
+
+#### Custom-Paymaster interface
+
+我们只需要构建一个 Paymaster 和 测试用ERC20 即可完成整个流程，并且在 paymaster 中只需要实现 2 个由系统合约 `bootloader` 调用的函数即可，剩下的流程将有系统完成。
+
+- `validateAndPayForPaymasterTransaction` 验证交易
+  - 验证交易中的 `paymasterInput` 格式(该交易的实际calldata), 取出 function selector
+  - 如果 function selector 等于 `IPaymasterFlow.approvalBased` 则进入 `approvalBased` 流程(稍后将详细解释)，否则将 revert (我们暂时没有实现 `general` 流程)
+  - 检查 `ERC20.allowance` 是否足够支付本次交易
+  - 从用户地址拉取 token (我们设置 1 token 即足以覆盖gas费用)
+  - 向 `BOOTLOADER_FORMAL_ADDRESS` 转账足够的 gas 费用
+  - 函数必须返回两个变量 `bytes4 magic` 标记验证成功的状态, `bytes memory context` 用于后续执行的上下文
+- `postTransaction` 是一个可选实现函数，它将在交易逻辑执行完后被调用，但不能保证一定会被调用，比如交易因为 `out of gas` 失败，则不会调用
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {IPaymaster, ExecutionResult, PAYMASTER_VALIDATION_SUCCESS_MAGIC} from "@matterlabs/zksync-contracts/l2/system-contracts/interfaces/IPaymaster.sol";
+import {IPaymasterFlow} from "@matterlabs/zksync-contracts/l2/system-contracts/interfaces/IPaymasterFlow.sol";
+import {TransactionHelper, Transaction} from "@matterlabs/zksync-contracts/l2/system-contracts/libraries/TransactionHelper.sol";
+
+import "@matterlabs/zksync-contracts/l2/system-contracts/Constants.sol";
+
+contract MyPaymaster is IPaymaster {
+    uint256 constant PRICE_FOR_PAYING_FEES = 1;
+    address public allowedToken;
+
+    modifier onlyBootloader() {
+        require(msg.sender == BOOTLOADER_FORMAL_ADDRESS, "Only bootloader can call this method");
+        // Continue execution if called from the bootloader.
+        _;
+    }
+
+    function validateAndPayForPaymasterTransaction  (
+        bytes32,
+        bytes32,
+        Transaction calldata _transaction
+    ) external payable onlyBootloader returns (bytes4 magic, bytes memory context) {
+    }
+
+    function postTransaction (
+        bytes calldata _context,
+        Transaction calldata _transaction,
+        bytes32,
+        bytes32,
+        ExecutionResult _txResult,
+        uint256 _maxRefundedGas
+    ) external payable onlyBootloader override {
+    }
+
+    receive() external payable {}
+}
+
+```
+
+### Built-in paymaster flows
+
+> [Built-in paymaster flows](https://docs.zksync.io/build/developer-reference/account-abstraction.html#built-in-paymaster-flows) 是系统内置的 paymsater 流程类型，目前只有 `general` 和 `approvalBased` 两种；
+
+```solidity
+// Built-in paymaster flows
+
+function general(bytes calldata data);
+
+function approvalBased(
+    address _token,
+    uint256 _minAllowance,
+    bytes calldata _innerInput
+)
+```
+
+`approvalBased` 是一种预设 ERC20.approve 的流程，系统合约在执行交易逻辑之前，会先调用 `ERC20.safeApprove` 方法保证目标地址有足够的 allowance 操作 token。
+
+```solidity
+library TransactionHelper {
+    ...
+    function processPaymasterInput(Transaction calldata _transaction) internal {
+        require(_transaction.paymasterInput.length >= 4, "The standard paymaster input must be at least 4 bytes long");
+
+        bytes4 paymasterInputSelector = bytes4(_transaction.paymasterInput[0:4]);
+        if (paymasterInputSelector == IPaymasterFlow.approvalBased.selector) {
+            ...
+
+            uint256 currentAllowance = IERC20(token).allowance(address(this), paymaster);
+            if (currentAllowance < minAllowance) {
+                // Some tokens, e.g. USDT require that the allowance is firsty set to zero
+                // and only then updated to the new value.
+
+                IERC20(token).safeApprove(paymaster, 0);
+                IERC20(token).safeApprove(paymaster, minAllowance);
+            }
+        } else if (paymasterInputSelector == IPaymasterFlow.general.selector) {
+            // Do nothing. general(bytes) paymaster flow means that the paymaster must interpret these bytes on his own.
+        } else {
+            revert("Unsupported paymaster flow");
+        }
+    }
+}
+```

@@ -6,7 +6,8 @@
   "private": true,
   "workspaces": [
     "Lesson01/hardhat-zksync-project",
-    "Lesson01/spend-limit"
+    "Lesson01/spend-limit",
+    "Lesson01/custom-paymaster"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
