@@ -13,7 +13,7 @@
 ## 课程概览
 
 - **课程形式**: 视频直播课程 + 代码示例 + 线上workshop
-- **课程时长**: 5 周
+- **课程时长**: 6 周
 - **课程目标:** 通过学习本课程，学习者将理解 zkSycn Era 的工作原理，并有能力在 zkSync Era 网络上部署 DApp。 帮助更多用户使用 zkSync Era。
 
 ## **课程大纲**
@@ -56,7 +56,7 @@
 ## **Course Overview**
 
 - **Course Format**: online live video courses + code example + online workshops
-- **Duration**: 5 weeks
+- **Duration**: 6 weeks
 - **Course Objectives:** Upon completing the course, learners will understand how zkSync Era works and be able to independently develop DApps for zkSync Era. Help more users onboard zkSync Era.
 
 ## **Course Outline**
