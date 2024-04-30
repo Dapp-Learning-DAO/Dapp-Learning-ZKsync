@@ -95,3 +95,7 @@
 
 - **Plonk and Plonky2**: Technical principles of Plonk and Plonky2 technology.
 - **Boojum**: Technical principles of Boojum
+
+## Reference
+
+- [zkSync Era Doc](https://docs.zksync.io/)
