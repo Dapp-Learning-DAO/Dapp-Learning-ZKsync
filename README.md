@@ -41,7 +41,7 @@
 
 ### Lesson 4: DApp 部署 1
 
-- 如何在 zkSync Era 上部署 Uniswap.
+- 如何在 zkSync Era 上部署 Uniswap V3 (front-end + contracts).
 
 ### Lesson 5: DApp 部署 2
 
@@ -51,7 +51,7 @@
 ### Lesson 6: Rollups原理和zkSync时代（选修）
 
 - **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。.
-- **Boojum**: Boojum: Boojum的技术原理
+- **Boojum**: Boojum的技术原理
 
 ## **Course Overview**
 
@@ -84,7 +84,7 @@
 
 ### Lesson 4: DApp Development 1
 
-- How to deploy uniswap on zkSync Era
+- How to deploy Uniswap V3 on zkSync Era (front-end + contracts)
 
 ### Lesson 5: DApp Development 2
 

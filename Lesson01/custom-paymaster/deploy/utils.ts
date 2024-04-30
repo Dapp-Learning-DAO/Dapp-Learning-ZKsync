@@ -47,6 +47,17 @@ export const getWallet = (privateKey?: string) => {
   return wallet;
 };
 
+  const provider = getProvider();
+
+  // Initialize zkSync Wallet
+  const wallet = new Wallet(
+    privateKey ?? process.env.WALLET_PRIVATE_KEY!,
+    provider
+  );
+
+  return wallet;
+};
+
 export const verifyEnoughBalance = async (wallet: Wallet, amount: bigint) => {
   // Check if the wallet has enough balance
   const balance = await wallet.getBalance();

@@ -97,7 +97,7 @@ tree -I 'node_modules'
   - `inMemoryNode` 本地测试网络
   - `hardhat` hardhat zksync 本地测试网络
 
-> `inMemoryNode` 可以理解为 zksync Era 版本的 `hardhat node`, 是 zksync Era 用于本地测试的持久化节点
+> `inMemoryNode` 可以理解为 zksync Era 版本的 `hardhat node`, 是 zksync Era 用于本地测试的持久化节点; 另外如果需要方便的在hardhat中测试部署脚本，可以使用 `@matterlabs/hardhat-zksync-node`
 
 ```ts
 // hardhat-zksync-project/hardhat.config.ts
@@ -151,7 +151,14 @@ const config: HardhatUserConfig = {
 
 #### 启动本地测试网络
 
-- 现在我们将使用 `zksync-cli` 启动一个本地测试网络(`zkcli-in-memory-node`)
+有两种启动本地持久化测试节点的方法，一种是直接运行 era_test_node （建议），一种是 zksync-cli + docker
+
+- [era_test_node](https://github.com/matter-labs/era-test-node)
+  - 需要安装Rust环境
+  - 下载 era_test_node 执行文件
+  - 运行本地测试node `era_test_node run`
+
+- zksync-cli + docker
 
   - 启动 docker, 新开一个命令行窗口，并输入
   - `zksync-cli` 会自动拉取 docker 镜像，创建 zksync 本地测试网 docker 容器, 并运行
@@ -181,7 +188,7 @@ const config: HardhatUserConfig = {
 
     ```sh
     npx zksync-cli wallet balance --rpc http://127.0.0.1:8011
-    ? Account address 0x36615Cf349d7F6344891B1e7CA7C72883F5dc049
+    ? Account address 0xBC989fDe9e54cAd2aB4392Af6dF60f04873A033A
 
     undefined Balance: 1000000000000 ETH (Ether)
     ```
