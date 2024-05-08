@@ -67,13 +67,13 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     })
   ).wait();
 
-  const AAcountDeploymentsDir = path.join(
+  const AAccountDeploymentsDir = path.join(
     __dirname,
-    "./AAcountDeployments.json"
+    "./AAccountDeployments.json"
   );
   let deploymentsData: any = {};
-  if (fs.existsSync(AAcountDeploymentsDir)) {
-    const data = fs.readFileSync(AAcountDeploymentsDir);
+  if (fs.existsSync(AAccountDeploymentsDir)) {
+    const data = fs.readFileSync(AAccountDeploymentsDir);
     try {
       deploymentsData = JSON.parse(data as never);
     } catch (e) {
@@ -88,7 +88,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     RECEIVER_ACCOUNT: owner.address,
   };
   fs.writeFileSync(
-    AAcountDeploymentsDir,
+    AAccountDeploymentsDir,
     JSON.stringify(deploymentsData, null, 2)
   );
 

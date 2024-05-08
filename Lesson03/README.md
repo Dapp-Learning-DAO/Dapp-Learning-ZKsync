@@ -121,13 +121,17 @@ Native AA 中的组成:
 - Paymaster: 继承 `IPaymaster` 接口的合约，可以自定义实现，但必须实现规定的接口:
   - `validateAndPayForPaymasterTransaction` 必须实现，用以确认 paymaster 是否原因承担该交易的费用
   - `postTransaction` 可选实现，在操作交易完成后 `bootloader` 会调用此方法
-- `AAFactory`: 可选实现，用于创建 AA钱包 的工厂合约
+- `AAFactory`: 可选实现，用于创建自定义 AA钱包 的工厂合约；
+
+> **在 zkSync 上，每个地址都是一个合约**。用户可以从他们的 EOA 账户开始交易，因为每个没有部署任何合约的地址都**隐式包含 DefaultAccount.sol(系统合约)** 中定义的代码。每当有人调用不在 `kernel space` (内核空间 即地址≥2^16) 且没有部署任何合约代码的合约时， 的代码DefaultAccount将被用作合约的代码。
 
 ### Native AA transaction flow
 
 ![zksync-AA-tx-flow.svg](../Lesson01/docs/img/zksync-AA-tx-flow.svg)
 
-**初始化AA钱包**
+**初始化自定义AA钱包**
+
+如果需要实现自定义AA钱包逻辑，那么就需要实现一个工厂合约来部署 `AAccount` 合约。
 
 1. 调用 `AAFactory.deployAccount()` 函数，触发AA钱包的初始化(部署合约)
 2. `AAFactory` 调用系统合约 `ContractDeployer` 的 `create2Account` 函数部署新的 `AAccount` 合约
@@ -142,18 +146,61 @@ Native AA 中的组成:
 2. `AAccount.validateTransaction` 验证操作的合法性
 3. 系统合约 `BootLoader` 将新的nonce标记为已使用；`AAccount` 检查余额是否足够支付gas，用户签名是否正确
 4. 支付 gas 费用，将有两种方式：
-  a. `AAccount` 直接支付 gas 费用，`BootLoader` 调用 `AAccount.payForTransaction` 函数
-  b. 委托 `Paymaster` 代为支付 gas 费用
-    - `BootLoader` 调用 `AAccount.prepareForPaymaster` 函数(如果涉及 ERC20 支付费用，这里会调用 `ERC20.approve` 授权给 paymaster 转走token);
-    - `BootLoader` 调用 `Paymaster.validateAndPayForPaymasterTransaction` 函数，这里将实现验证交易和向 `BootLoader` 支付gas费用的逻辑，例如 `transferFrom` ERC20 token，并向 `BootLoader` 转账 ETH
+   a. `AAccount` 直接支付 gas 费用，`BootLoader` 调用 `AAccount.payForTransaction` 函数
+   b. 委托 `Paymaster` 代为支付 gas 费用
+   - `BootLoader` 调用 `AAccount.prepareForPaymaster` 函数(如果涉及 ERC20 支付费用，这里会调用 `ERC20.approve` 授权给 paymaster 转走token);
+   - `BootLoader` 调用 `Paymaster.validateAndPayForPaymasterTransaction` 函数，这里将实现验证交易和向 `BootLoader` 支付gas费用的逻辑，例如 `transferFrom` ERC20 token，并向 `BootLoader` 转账 ETH
 5. `BootLoader` 检查收到的 ETH 数额是否足以支付gas费用
 6. `BootLoader` 调用 `AAccount.executeTransaction` 执行操作
 7. 如果使用了 Paymaster 支付费用，操作执行成功后 `BootLoader` 调用 `Paymaster.postTransaction` 函数
 
-
 ### Native AA vs EIP-4337
 
+| Comparison               | Native AA                 | EIP-4337                        |
+| ------------------------ | ------------------------- | ------------------------------- |
+| Defined in               | Protocol + contract level | contract level                  |
+| Trigger Verify & Execute | bootloader                | Bundler → EntryPoint            |
+| Determine Tx order       | Sequencer                 | Bundler                         |
+| Send Tx before deploy    | no                        | yes, with initCode              |
+| Dev. Threshold           | Low (contract)            | Medium (bundler SDK + contract) |
+| SHOULD Limit Caller      | only Bootloader           | only EntryPoint                 |
+| Validate Function        | validateTransaction       | validateUserOp                  |
+| Execute Function         | executeTransaction        | No Rules                        |
+
 ### Fee Model and Paymaster
+
+在 EIP-4337 中，有三种类型的 Gas 限制，它们描述了不同步骤的 Gas 限制:
+
+- `verificationGasLimit` 验证操作所需的gas费用限制
+- `callGasLimit` 执行操作所需的gas费用限制
+- `preVerificationGas` 额外向Bundler支付的gas费用
+
+而在 zkSync Era Native AA 只有一个字段 ，`gasLimit` 涵盖了所有三个字段的费用。提交交易时，请确保gasLimit足以支付验证、支付费用（上面提到的 ERC20 转账）以及实际执行本身。
+
+#### Built-in paymaster flows
+
+##### General paymaster flow
+
+如果 Paymaster 无需用户事先采取行动即可进行操作(例如用户提前支付了费用)，则应使用该方法。`paymasterInput` 字段必须编码为对具有以下接口的函数的调用：
+
+```solidity
+function general(bytes calldata data);
+```
+
+##### Approval-based paymaster flow
+
+如果 Paymaster 需要从 AAccount 中拉取 ERC20 作为费用，则向 `paymasterInput` 字段传入：
+
+```solidity
+function approvalBased(
+    address _token,
+    uint256 _minAllowance,
+    bytes calldata _innerInput
+)
+```
+
+## 
+
 
 ## Reference
 

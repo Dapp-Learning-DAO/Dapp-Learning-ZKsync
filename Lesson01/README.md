@@ -28,7 +28,7 @@
 - 安装 `zksync-cli`, 输入命令后会提示是否安装，输入 `y` 安装
 
 ```sh
-npx zksync-cli@latest
+npx zksync-cli
 ```
 
 - 使用 `zksync-cli` 创建项目
@@ -538,7 +538,7 @@ SpendLimit 合约继承自 Account 合约作为一个模块，具有以下功能
 
 根据上述需求我们要实现 3 个主要合约
 
-- `AAFactory.sol` AA 账户的工厂合约，调用 `era L2 system contracts` 创建 `AAcount` 合约
+- `AAFactory.sol` AA 账户的工厂合约，调用 `era L2 system contracts` 创建 `AAccount` 合约
 
 ```solidity
 contract AAFactory {
@@ -548,7 +548,7 @@ contract AAFactory {
         bytes32 salt,
         address owner
     ) external returns (address accountAddress) {
-        // call L2 sysmtem contract deploy AAcount
+        // call L2 sysmtem contract deploy AAccount
         ...
     }
 }
@@ -601,7 +601,7 @@ contract Account is IAccount, IERC1271, SpendLimit {
 ```
 
 - `SpendLimit.sol` 主要实现具体的业务需求逻辑
-  - `modifier onlyAccount` 限制接口只能由 AAcount 合约自身调用，即让用户的所有请求必须通过 AA 的调用方式
+  - `modifier onlyAccount` 限制接口只能由 AAccount 合约自身调用，即让用户的所有请求必须通过 AA 的调用方式
   - `setSpendingLimit` 设置每日消费(ETH 转账)上限
   - `removeSpendingLimit` 删除消费上限(设置为 0)
   - `isValidUpdate` 检验上限设置是否合规 (只有两种情况可以修改上限，新上限没有超出当天剩余可消费额度或者时间超过 24 小时)
@@ -659,9 +659,9 @@ Account 合约是整个 native AA 流程的关键合约，必须继承 `IAccount
 
 **`validateTransaction`**
 
-当用户广播了一条 native AA 交易后，系统合约会调用 AAcount 合约的 `validateTransaction` 接口
+当用户广播了一条 native AA 交易后，系统合约会调用 AAccount 合约的 `validateTransaction` 接口
 
-1. 调用系统合约的 `NonceHolder` 合约的 `incrementMinNonceIfEquals` 方法，该方法会检查 AAcount 的 nonce，并自动加一
+1. 调用系统合约的 `NonceHolder` 合约的 `incrementMinNonceIfEquals` 方法，该方法会检查 AAccount 的 nonce，并自动加一
 2. 检查账户余额是否足够支付本次交易 gas
 3. 检查交易签名是否合法（`ecrecover(_hash, v, r, s) == owner`）
 
@@ -779,7 +779,7 @@ Time to reset limit:  1713844093
 ✨  Done in 5.63s.
 ```
 
-- 触发 AAcount 转账
+- 触发 AAccount 转账
   1. 使用 owner 的 privatekey 初始化 `Wallet` 对象，用户交易签名
   2. 我们将触发Account合约向另一个账户转账，组装交易并签名
      a. from 是 Account 合约, to 是转账目标账户

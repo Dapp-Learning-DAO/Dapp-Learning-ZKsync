@@ -37,7 +37,7 @@
 - **EIP-4337 概述**: 介绍 EIP-4337 及其工作原理。
 - **zkSync Era 中的 AA 机制**: 介绍 zkSync Era 中的账户抽象（AA）机制，详细说明其操作原理和工作流程.
 - **原生 AA 与 EIP-4337 的比较**: 比较 zkSync Era 中原生 AA 与 EIP-4337 的差异.
-- **费用模型与支付代理**: 介绍 zkSync Era 中账户抽象的费用模型以及支付代理.
+- **费用模型与Paymaster**: 介绍 zkSync Era 中账户抽象的费用模型以及Paymaster.
 
 ### Lesson 4: DApp 部署 1
 
