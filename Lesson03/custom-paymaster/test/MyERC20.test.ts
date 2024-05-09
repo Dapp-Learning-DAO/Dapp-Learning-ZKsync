@@ -8,12 +8,9 @@ import "@matterlabs/hardhat-zksync-chai-matchers";
 import { deployContract, fundAccount } from "./utils";
 
 import dotenv from "dotenv";
+import { getWallet } from "../deploy/utils";
 dotenv.config();
 
-// rich wallet from era-test-node
-const PRIVATE_KEY =
-  process.env.WALLET_PRIVATE_KEY ||
-  "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
 
 describe("MyERC20", function () {
   let provider: Provider;
@@ -24,7 +21,7 @@ describe("MyERC20", function () {
 
   before(async function () {
     provider = new Provider(hre.network.config.url);
-    wallet = new Wallet(PRIVATE_KEY, provider);
+    wallet = getWallet();
     deployer = new Deployer(hre, wallet);
 
     userWallet = Wallet.createRandom();

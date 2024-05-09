@@ -199,14 +199,431 @@ function approvalBased(
 )
 ```
 
-## 
+## Dive into Native AA with custom-paymaster
+
+接下来我们将以 [custom-paymaster](./custom-paymaster/) 为例，深入探究在 Native AA 调用过程中，究竟发生了什么，Paymaster 合约 和 zksync Era 系统合约将如何参与整个过程。
+
+假设我们有一个 zkSync Era EOA 账户，因为缺少作为 gas 费用的ETH，所以使用一个 custom-paymaster 合约代替我们支付gas。
+
+### step 0
+
+虽然EOA账户没有gas，但是依旧可以在交易信息 `customData` 中添加 `paymasterParams` 字段，zksync-ehters 会自动告诉网络这是一笔 Native AA 类型的交易，系统合约将尝试向指定的 Paymaster 收取gas费用，而不是你的EOA账户。
+
+```ts
+// custom-paymaster/deploy/use-paymaster.ts
+import { utils, Wallet } from "zksync-ethers";
+
+const mintTx = await erc20.mint(wallet.address, 5, {
+  // paymaster info
+  customData: {
+    paymasterParams: utils.getPaymasterParams(PAYMASTER_ADDRESS, {
+      type: "ApprovalBased",
+      token: TOKEN_ADDRESS,
+      // set minimalAllowance as we defined in the paymaster contract
+      minimalAllowance: BigInt("1"),
+      // empty bytes as testnet paymaster does not use innerInput
+      innerInput: new Uint8Array(),
+    });,
+    gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+  },
+});
+```
+
+`utils.getPaymasterParams` 是zksync-ethers中提供的组装paymaster调用的方法，处理后的数据是这样：
+
+- `paymaster` paymaster 合约地址
+- `paymasterInput` 是组装后的calldata，在这里我们选择使用ERC20付费给Paymaster的模式，如果选择其他模式则将编码为 `function general(bytes calldata data)`
+
+```ts
+paymasterParams: {
+  // paymaster 合约地址
+  paymaster: '0xaAF5f437fB0524492886fbA64D703df15BF619AE',
+  // function approvalBased(address _token,uint256 _minAllowance,bytes calldata _innerInput)
+  paymasterInput: '0x949431dc00000000000000000000000099e12239cbf8112fbb3f7fd473d0558031abcbb5000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000'
+}
+```
+
+zksync-ethers 会自动将交易的 [`transaction_type`](https://docs.zksync.io/zk-stack/concepts/transaction-lifecycle.html#transaction-types) 字段赋值为 113，这代表该交易是 `EIP-712` 类型交易，该类型的交易会进一步处理，解析其中的字段信息和验证签名。我们在 spend-limit 示例中手动构建过 Native AA 交易，其中就直接赋值了 type 为113。
+
+> 由于 `transaction_type` 字段长度是 1 byte，所以不能使用712，而规定为 113。
+
+```ts
+// spend-limit/deploy/transferETH.ts
+import { utils, EIP712Signer } from "zksync-ethers";
+
+let ethTransferTx = {
+  from: DEPLOYED_ACCOUNT_ADDRESS,
+  to: RECEIVER_ACCOUNT, // account that will receive the ETH transfer
+  chainId: (await provider.getNetwork()).chainId,
+  nonce: await provider.getTransactionCount(DEPLOYED_ACCOUNT_ADDRESS),
+  type: 113, // transaction_type
+  customData: {
+    gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+  } as types.Eip712Meta,
+  value: ethers.parseEther(transferAmount),
+  data: "0x",
+} as types.Transaction;
+
+ethTransferTx.gasPrice = await provider.getGasPrice();
+ethTransferTx.gasLimit = await provider.estimateGas(ethTransferTx);
+
+// 根据 EIP-712 规范，对 txHash 进行签名，`bootloader` 中会对此验证
+const signedTxHash = EIP712Signer.getSignedDigest(ethTransferTx);
+const signature = ethers.concat([
+  ethers.Signature.from(owner.signingKey.sign(signedTxHash)).serialized,
+]);
+
+ethTransferTx.customData = {
+  ...ethTransferTx.customData,
+  customSignature: signature,
+};
+```
+
+### step 1
+
+当交易被广播之后，首先交由系统合约 `bootloader` 处理，在验证交易阶段，会调用 `from` 的 `validateTransaction` 函数。
+
+```ts
+// system-contract/bootloader.yul
+// flow of Native AA tx with paymaster
+processTx(txdata...)
+    |__ processL2Tx(txdata...)
+        |__ l2TxValidation(...)
+        |   |__ ZKSYNC_NEAR_CALL_validateTx(...)
+        |       |__ callAccountMethod("validateTransaction")
+        |       |__ ensurePayment(txDataOffset, gasPrice)
+        |           |__ accountPrePaymaster()
+        |           |   |__ callAccountMethod("prepareForPaymaster")
+        |           |__ validateAndPayForPaymasterTransaction()
+        |               |__ callAccountMethod("validateAndPayForPaymasterTransaction")
+        |__ l2TxExecution(...)
+            |__ l2TxExecution(...)
+                |__ ZKSYNC_NEAR_CALL_executeL2Tx(...)
+                    |__ executeL2Tx()
+                        |__ callAccountMethod("executeTransaction")
+                |__ refundCurrentL2Transaction()
+                    |__ ZKSYNC_NEAR_CALL_callPostOp()
+                        |__ call("postTransaction")
+
+```
+
+此时大家可能会疑惑，如果是在 spend-limit 中，`from` 是 AA钱包 合约，其中包含 `validateTransaction` 接口，那么调用不会有问题，但是在 custom-paymaster 示例中，`from` 是一个EOA类型账户，在其上调用接口是否会报错？
+
+这里就需要介绍 [DefaultAccount](https://docs.zksync.io/zk-stack/components/smart-contracts/system-contracts.html#defaultaccount) ，事实上 EOA 账户可以默认为继承 DefaultAccount 的智能合约。每当账户**不满足**以下条件时：
+
+- 属于 kernel space (内核空间)
+- 上面部署了任何代码（相应存储槽下存储的值AccountCodeStorage为零）
+
+该账户将使用 `DefaultAccount` 的代码。所以在 custom-paymaster 示例中，`bootloader` 将调用 `DefaultAccount.validateTransaction` 函数来验证 AA 交易。
+
+```solidity
+// system-contracts/contracts/DefaultAccount.sol
+
+contract DefaultAccount is IAccount {
+    ...
+
+    function _validateTransaction(
+        bytes32 _suggestedSignedHash,
+        Transaction calldata _transaction
+    ) internal returns (bytes4 magic) {
+        // Note, that nonce holder can only be called with "isSystem" flag.
+        SystemContractsCaller.systemCallWithPropagatedRevert(
+            uint32(gasleft()),
+            address(NONCE_HOLDER_SYSTEM_CONTRACT),
+            0,
+            abi.encodeCall(INonceHolder.incrementMinNonceIfEquals, (_transaction.nonce))
+        );
+        ...
+    }
+}
+```
+
+在 `validateTransaction` 函数中，必须要调用 `NonceHolder.incrementMinNonceIfEquals` 或者其他更新账户 nonce 值的方法。nonce 不一定必须是单调递增的，但建议调用 `incrementMinNonceIfEquals` 函数使其单调递增，在交易执行完字后新的 nonce 将被标记为已使用状态。
+
+```solidity
+// system-contracts/contracts/NonceHolder.sol
+contract NonceHolder is INonceHolder, ISystemContract {
+  ...
+  /// @notice A convenience method to increment the minimal nonce if it is equal
+  /// to the `_expectedNonce`.
+  /// @param _expectedNonce The expected minimal nonce for the account.
+  function incrementMinNonceIfEquals(uint256 _expectedNonce) external onlySystemCall {
+      uint256 addressAsKey = uint256(uint160(msg.sender));
+      uint256 oldRawNonce = rawNonces[addressAsKey];
+
+      (, uint256 oldMinNonce) = _splitRawNonce(oldRawNonce);
+      require(oldMinNonce == _expectedNonce, "Incorrect nonce");
+
+      unchecked {
+          rawNonces[addressAsKey] = oldRawNonce + 1;
+      }
+  }
+}
+```
+
+### step 2
+
+在 nonce 更新后，会对 Native AA 的交易验证
+
+1. 生成 txHash，参考 `TransactionHelper.encodeHash`，这里会按照 EIP-712 的规范生成
+2. 计算该交易所需的 gas 费用，参考 `TransactionHelper.totalRequiredBalance`，分两类情况
+   a. 如果指定了 paymaster，则此处返回 `tx.value` 即不向 `from` 收取 gas 费用
+   b. 如果没有指定 paymaster，则 `requiredBalance = maxFeePerGas * gasLimit + tx.value`
+3. 通过 `ecrecover` 验证 txHash 与 `_transaction.signature` 是否匹配
+
+```solidity
+// system-contracts/contracts/DefaultAccount.sol
+import "./libraries/TransactionHelper.sol";
+
+contract DefaultAccount is IAccount {
+    using TransactionHelper for *;
+
+    ...
+
+    function _validateTransaction(
+        bytes32 _suggestedSignedHash,
+        Transaction calldata _transaction
+    ) internal returns (bytes4 magic) {
+        ...
+
+        // Even though for the transaction types present in the system right now,
+        // we always provide the suggested signed hash, this should not be
+        // always expected. In case the bootloader has no clue what the default hash
+        // is, the bytes32(0) will be supplied.
+        bytes32 txHash = _suggestedSignedHash != bytes32(0) ? _suggestedSignedHash : _transaction.encodeHash();
+
+        // The fact there is are enough balance for the account
+        // should be checked explicitly to prevent user paying for fee for a
+        // transaction that wouldn't be included on Ethereum.
+        uint256 totalRequiredBalance = _transaction.totalRequiredBalance();
+        require(totalRequiredBalance <= address(this).balance, "Not enough balance for fee + value");
+
+        if (_isValidSignature(txHash, _transaction.signature)) {
+            magic = ACCOUNT_VALIDATION_SUCCESS_MAGIC;
+        }
+    }
+}
+```
+
+### step 3
+
+在 `validateTransaction` 通过后会, `bootloader` 通过 `ensureNonceUsage` 方法使 account nonce 标记为已使用
+
+### step 4
+
+进入 `bootloader.ensurePayment` 收取 gas 费用
+
+- 如果没有指定 paymaster 将直接从 `from` 账户扣除 gas 费用 + `tx.value`;
+  - `bootloader.accountPayForTx` 方法会调用 AAccount 的 `payForTransaction` 方法收取费用
+- 如果有指定 paymaster 则:
+
+1. `bootloader` 调用 AAccount (DefaultAccount) 的 `prepareForPaymaster` 函数，目前只有两种模式，其他情况则会revert
+   a. `approvalBased` 模式，需要 `ERC20.approve` 操作，授权给 paymaster
+   b. `general` 模式，不会做任何操作
+
+```solidity
+import "./libraries/TransactionHelper.sol";
+
+contract DefaultAccount is IAccount {
+    using TransactionHelper for *;
+    ...
+    function prepareForPaymaster(
+        bytes32, // _txHash
+        bytes32, // _suggestedSignedHash
+        Transaction calldata _transaction
+    ) external payable ignoreNonBootloader ignoreInDelegateCall {
+        _transaction.processPaymasterInput();
+    }
+}
+
+library TransactionHelper {
+    ...
+    function processPaymasterInput(Transaction calldata _transaction) internal {
+        require(_transaction.paymasterInput.length >= 4, "The standard paymaster input must be at least 4 bytes long");
+
+        bytes4 paymasterInputSelector = bytes4(_transaction.paymasterInput[0:4]);
+        if (paymasterInputSelector == IPaymasterFlow.approvalBased.selector) {
+            require(
+                _transaction.paymasterInput.length >= 68,
+                "The approvalBased paymaster input must be at least 68 bytes long"
+            );
+
+            // While the actual data consists of address, uint256 and bytes data,
+            // the data is needed only for the paymaster, so we ignore it here for the sake of optimization
+            (address token, uint256 minAllowance) = abi.decode(_transaction.paymasterInput[4:68], (address, uint256));
+            address paymaster = address(uint160(_transaction.paymaster));
+
+            uint256 currentAllowance = IERC20(token).allowance(address(this), paymaster);
+            if (currentAllowance < minAllowance) {
+                // Some tokens, e.g. USDT require that the allowance is firsty set to zero
+                // and only then updated to the new value.
+
+                IERC20(token).safeApprove(paymaster, 0);
+                IERC20(token).safeApprove(paymaster, minAllowance);
+            }
+        } else if (paymasterInputSelector == IPaymasterFlow.general.selector) {
+            // Do nothing. general(bytes) paymaster flow means that the paymaster must interpret these bytes on his own.
+        } else {
+            revert("Unsupported paymaster flow");
+        }
+    }
+}
+```
+
+2. `bootloader` 调用 paymaster 的 `validateAndPayForPaymasterTransaction` 函数，paymaster 会先检查 token 授权额度是否充足，然后从 account 中拉取 ERC20，最后向 `bootloader` 支付 ETH (包含 tx.value)
+
+```solidity
+
+contract MyPaymaster is IPaymaster {
+    ...
+    function validateAndPayForPaymasterTransaction(
+        bytes32,
+        bytes32,
+        Transaction calldata _transaction
+    )
+        external
+        payable
+        onlyBootloader
+        returns (bytes4 magic, bytes memory context)
+    {
+        // By default we consider the transaction as accepted.
+        magic = PAYMASTER_VALIDATION_SUCCESS_MAGIC;
+        require(
+            _transaction.paymasterInput.length >= 4,
+            "The standard paymaster input must be at least 4 bytes long"
+        );
+
+        bytes4 paymasterInputSelector = bytes4(
+            _transaction.paymasterInput[0:4]
+        );
+        if (paymasterInputSelector == IPaymasterFlow.approvalBased.selector) {
+            // While the transaction data consists of address, uint256 and bytes data,
+            // the data is not needed for this paymaster
+            (address token, uint256 amount, bytes memory data) = abi.decode(
+                _transaction.paymasterInput[4:],
+                (address, uint256, bytes)
+            );
+
+            // Verify if token is the correct one
+            require(token == allowedToken, "Invalid token");
+
+            // We verify that the user has provided enough allowance
+            address userAddress = address(uint160(_transaction.from));
+
+            address thisAddress = address(this);
+
+            uint256 providedAllowance = IERC20(token).allowance(
+                userAddress,
+                thisAddress
+            );
+            require(
+                providedAllowance >= PRICE_FOR_PAYING_FEES,
+                "Min allowance too low"
+            );
+
+            // Note, that while the minimal amount of ETH needed is tx.gasPrice * tx.gasLimit,
+            // neither paymaster nor account are allowed to access this context variable.
+            uint256 requiredETH = _transaction.gasLimit *
+                _transaction.maxFeePerGas;
+
+            try
+                IERC20(token).transferFrom(userAddress, thisAddress, amount)
+            {} catch (bytes memory revertReason) {
+                // If the revert reason is empty or represented by just a function selector,
+                // we replace the error with a more user-friendly message
+                if (revertReason.length <= 4) {
+                    revert("Failed to transferFrom from users' account");
+                } else {
+                    assembly {
+                        revert(add(0x20, revertReason), mload(revertReason))
+                    }
+                }
+            }
+
+            // The bootloader never returns any data, so it can safely be ignored here.
+            (bool success, ) = payable(BOOTLOADER_FORMAL_ADDRESS).call{
+                value: requiredETH
+            }("");
+            require(
+                success,
+                "Failed to transfer tx fee to the bootloader. Paymaster balance might not be enough."
+            );
+        } else {
+            revert("Unsupported paymaster flow");
+        }
+    }
+}
+```
+
+### step 5
+
+`bootloader` 检查收到的 ETH 是否大于等于交易所需的 ETH，如果检查通过，返还多余的ETH，下面将进入执行交易阶段
+
+### step 6
+
+`bootloader` 调用 account (DefaultAccount) 的 `executeTransaction` 函数，执行交易操作
+
+1. 提取交易数据 `to`, `value`, `data`, `gas`
+2. 检查是否为创建合约的操作，若是则 `isSystemCall` 为true
+3. 执行call调用
+
+```solidity
+// system-contracts/contracts/DefaultAccount.sol
+import "./libraries/TransactionHelper.sol";
+
+contract DefaultAccount is IAccount {
+    using TransactionHelper for *;
+    ...
+
+    /// @notice Method called by the bootloader to execute the transaction.
+    /// @param _transaction The transaction to execute.
+    /// @dev It also accepts unused _txHash and _suggestedSignedHash parameters:
+    /// the unique (canonical) hash of the transaction and the suggested signed
+    /// hash of the transaction.
+    function executeTransaction(
+        bytes32, // _txHash
+        bytes32, // _suggestedSignedHash
+        Transaction calldata _transaction
+    ) external payable override ignoreNonBootloader ignoreInDelegateCall {
+        _execute(_transaction);
+    }
+
+    function _execute(Transaction calldata _transaction) internal {
+        address to = address(uint160(_transaction.to));
+        uint128 value = Utils.safeCastToU128(_transaction.value);
+        bytes calldata data = _transaction.data;
+        uint32 gas = Utils.safeCastToU32(gasleft());
+
+        // Note, that the deployment method from the deployer contract can only be called with a "systemCall" flag.
+        bool isSystemCall;
+        if (to == address(DEPLOYER_SYSTEM_CONTRACT) && data.length >= 4) {
+            bytes4 selector = bytes4(data[:4]);
+            // Check that called function is the deployment method,
+            // the others deployer method is not supposed to be called from the default account.
+            isSystemCall =
+                selector == DEPLOYER_SYSTEM_CONTRACT.create.selector ||
+                selector == DEPLOYER_SYSTEM_CONTRACT.create2.selector ||
+                selector == DEPLOYER_SYSTEM_CONTRACT.createAccount.selector ||
+                selector == DEPLOYER_SYSTEM_CONTRACT.create2Account.selector;
+        }
+        bool success = EfficientCall.rawCall(gas, to, value, data, isSystemCall);
+        if (!success) {
+            EfficientCall.propagateRevert();
+        }
+    }
+}
+```
+
+### step 7
+
+如果该交易使用了 paymaster ，`bootloader` 调用 paymaster `postTransaction` 函数，这里 paymaster 可以做自定义操作，比如发送交易完成的 event，便于链下服务监听。
 
 
 ## Reference
 
-- zkSync Era Doc <https://docs.zksync.io/build/developer-reference/account-abstraction.html>
-- ERC-4337 <https://eips.ethereum.org/EIPS/eip-4337>
-- ERC 4337: account abstraction without Ethereum protocol changes <https://medium.com/infinitism/erc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a>
-- Account Abstraction 介紹（一）：以太坊的帳戶現況 <https://medium.com/imtoken/account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%B8%80-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E7%9A%84%E5%B8%B3%E6%88%B6%E7%8F%BE%E6%B3%81-6c03c303f229>
-- Account Abstraction 介紹（二）：以太坊未來的帳戶體驗 <https://medium.com/imtoken/account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%BA%8C-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%9C%AA%E4%BE%86%E7%9A%84%E5%B8%B3%E6%88%B6%E9%AB%94%E9%A9%97-cca0380d3ba5>
-- DL 分享视频 AA workshop <https://space.bilibili.com/2145417872/channel/collectiondetail?sid=1974263>
+- [zkSync Era Doc](https://docs.zksync.io/build/developer-reference/account-abstraction.html)
+- [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)
+- [ERC 4337: account abstraction without Ethereum protocol changes](https://medium.com/infinitism)erc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a>
+- [Account Abstraction 介紹（一）：以太坊的帳戶現況](https://medium.com/imtoken)account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%B8%80-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E7%9A%84%E5%B8%B3%E6%88%B6%E7%8F%BE%E6%B3%81-6c03c303f229>
+- [Account Abstraction 介紹（二）：以太坊未來的帳戶體驗](https://medium.com/imtoken)account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%BA%8C-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%9C%AA%E4%BE%86%E7%9A%84%E5%B8%B3%E6%88%B6%E9%AB%94%E9%A9%97-cca0380d3ba5>
+- [DL 分享视频 AA workshop](https://space.bilibili.com/2145417872/channel/collectiondetail?sid=1974263)

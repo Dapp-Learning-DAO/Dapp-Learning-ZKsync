@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
       isSystem: true,
     },
   },
-  defaultNetwork: "zkSyncSepoliaTestnet",
+  defaultNetwork: "inMemoryNode",
   networks: {
     zkSyncSepoliaTestnet: {
       url: "https://sepolia.era.zksync.dev",
@@ -28,14 +28,6 @@ const config: HardhatUserConfig = {
       verifyURL:
         "https://zksync2-mainnet-explorer.zksync.io/contract_verification",
     },
-    zkSyncGoerliTestnet: {
-      // deprecated network
-      url: "https://testnet.era.zksync.dev",
-      ethNetwork: "goerli",
-      zksync: true,
-      verifyURL:
-        "https://zksync2-testnet-explorer.zksync.dev/contract_verification",
-    },
     dockerizedNode: {
       url: "http://localhost:3050",
       ethNetwork: "http://localhost:8545",
@@ -43,7 +35,7 @@ const config: HardhatUserConfig = {
     },
     inMemoryNode: {
       url: "http://127.0.0.1:8011",
-      ethNetwork: "", // in-memory node doesn't support eth node; removing this line will cause an error
+      ethNetwork: "http://127.0.0.1:8545", // in-memory node doesn't support eth node; removing this line will cause an error
       zksync: true,
     },
     hardhat: {

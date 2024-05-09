@@ -8,12 +8,10 @@ import "@matterlabs/hardhat-zksync-chai-matchers";
 import { deployContract, fundAccount } from "./utils";
 
 import dotenv from "dotenv";
+import { getWallet } from "../deploy/utils";
 dotenv.config();
 
 // rich wallet from era-test-node
-const PRIVATE_KEY =
-  process.env.WALLET_PRIVATE_KEY ||
-  "0x7726827caac94a7f9e1b160f7ea819f172f7b6f9d2a97f992c38edeab82d4110";
 const GAS_LIMIT = 6000000;
 
 describe("MyPaymaster", function () {
@@ -21,13 +19,13 @@ describe("MyPaymaster", function () {
   let wallet: Wallet;
   let deployer: Deployer;
   let userWallet: Wallet;
-  let initialBalance: ethers.BigNumber;
+  let initialBalance: bigint;
   let paymaster: Contract;
   let erc20: Contract;
 
   before(async function () {
     provider = new Provider(hre.network.config.url);
-    wallet = new Wallet(PRIVATE_KEY, provider);
+    wallet = getWallet();
     deployer = new Deployer(hre, wallet);
 
     userWallet = Wallet.createRandom();
@@ -103,7 +101,7 @@ describe("MyPaymaster", function () {
     const invalidTokenAddress = "0x000000000000000000000000000000000000dead";
     await expect(
       executeTransaction(userWallet, "ApprovalBased", invalidTokenAddress),
-    ).to.be.rejectedWith("failed pre-paymaster preparation");
+    ).to.be.rejectedWith("Pre-paymaster preparation error");
   });
 
   it("should revert if allowance is too low", async function () {
@@ -114,7 +112,7 @@ describe("MyPaymaster", function () {
       await executeTransaction(
         userWallet,
         "ApprovalBased",
-        await erc20.getAddress().toString(),
+        await erc20.getAddress(),
       );
     } catch (e) {
       expect(e.shortMessage).to.include("Min allowance too low");

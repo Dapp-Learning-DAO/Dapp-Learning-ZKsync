@@ -5,7 +5,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-
 let TOKEN_ADDRESS: string;
 let PAYMASTER_ADDRESS: string;
 
@@ -15,7 +14,6 @@ function getToken(hre: HardhatRuntimeEnvironment, wallet: Wallet) {
 }
 
 export default async function (hre: HardhatRuntimeEnvironment) {
-
   // load the values after deploying the FactoryAccount
   const DeploymentsDir = path.join(__dirname, "./Deployments.json");
   let Deployments: any;
@@ -64,15 +62,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   console.log("Transaction fee estimation is :>> ", fee.toString());
 
   console.log(`Minting 5 tokens for the wallet via paymaster...`);
-  await (
-    await erc20.mint(wallet.address, 5, {
-      // paymaster info
-      customData: {
-        paymasterParams: paymasterParams,
-        gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
-      },
-    })
-  ).wait();
+  const mintTx = await erc20.mint(wallet.address, 5, {
+    // paymaster info
+    customData: {
+      paymasterParams: paymasterParams,
+      gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+    },
+  });
+  await mintTx.wait();
 
   console.log(
     `Paymaster ERC20 token balance is now ${await erc20.balanceOf(

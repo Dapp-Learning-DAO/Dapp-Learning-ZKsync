@@ -21,14 +21,14 @@ const ETH_ADDRESS =
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   // load the values after deploying the FactoryAccount
-  const AAccountDeploymentsDir = path.join(
+  const DeploymentsDir = path.join(
     __dirname,
-    "./AAccountDeployments.json"
+    "./Deployments.json"
   );
-  let AAccountDeployments: any;
-  if (fs.existsSync(AAccountDeploymentsDir)) {
-    AAccountDeployments = JSON.parse(
-      fs.readFileSync(AAccountDeploymentsDir) as never
+  let Deployments: any;
+  if (fs.existsSync(DeploymentsDir)) {
+    Deployments = JSON.parse(
+      fs.readFileSync(DeploymentsDir) as never
     );
   } else {
     throw "Must deploy SC account first";
@@ -37,7 +37,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     DEPLOYED_ACCOUNT_OWNER_PRIVATE_KEY,
     DEPLOYED_ACCOUNT_ADDRESS,
     RECEIVER_ACCOUNT,
-  } = AAccountDeployments;
+  } = Deployments;
 
   const provider = getProvider();
 
