@@ -13,7 +13,7 @@ EOA 与 CA 最大的区别在于，EOA 可以作为交易发起者，而 Contrac
 
 ![Lesson02_01](./docs/img/Lesson02_01.png)
 
-对于普通用户而言 EOA 账户最大的问题在于密钥的丢失意味着失去了一切账户资产和控制权，另外EOA的验证只能使用 ESDSA 签名算法，以及只能使用 ETH 作为gas等缺点。让 CA 账户来改进这些问题，便是账户抽象的设计初衷。
+对于普通用户而言 EOA 账户最大的问题在于密钥的丢失意味着失去了一切账户资产和控制权，另外EOA的验证只能使用 ESDSA 签名算法，以及只能使用 ETH 作为gas等缺点。
 
 ![Lesson02_02](./docs/img/Lesson02_02.png)
 
@@ -26,7 +26,7 @@ EOA 与 CA 最大的区别在于，EOA 可以作为交易发起者，而 Contrac
 - 可以使用抗量子安全签名算法（例如 Lamport、Winternitz）
 - 可升级性
 
-> 在 EIP-4337 之前， EIP-2938 曾试图解决类似的问题，但因为引入了对以太坊共识层的修改，所以未被广泛采纳。
+> 在 EIP-4337 之前， EIP-2938 曾试图解决类似的问题，但引入了对以太坊共识层的修改。
 
 #### How EIP-4337 works
 
@@ -618,6 +618,44 @@ contract DefaultAccount is IAccount {
 
 如果该交易使用了 paymaster ，`bootloader` 调用 paymaster `postTransaction` 函数，这里 paymaster 可以做自定义操作，比如发送交易完成的 event，便于链下服务监听。
 
+## Estimating gas when interacting with a paymaster
+
+虽然 paymaster 为用户支付费用，但与正常交易相比，它也会消耗额外的 Gas，其中包括：
+
+1. 出纳员内部的计算 `validateAndPayForPaymasterTransaction` 以及 `postTransaction` (可以忽略不计)
+2. Paymaster 将资金发送到 `bootloader`
+3. 用户为 paymaster 做 ERC20 approve 操作
+
+> 1)的消耗可以忽略不计，2) 的效果是固定的转账费用，而 3) 当存储槽从零变为一个新的非零值时，是一个相对昂贵的操作。这是因为Ethereum的存储模型对修改空白存储槽和更新已有存储槽的费用是不同的。数据写入成本：首次写入一个存储槽需要消耗大约20000 gas。考虑到L1网络中gas的价格（例如50 gwei），这种操作的成本可以非常高。
+
+如何正确预估一笔使用 paymaster 的 AA 交易费用，对于应用程序来说至关重要。
+
+```ts
+import { utils } from "zksync-ethers";
+
+// Encoding the "ApprovalBased" paymaster flow's input
+const paymasterParams = utils.getPaymasterParams(PAYMASTER_ADDRESS, {
+  type: "ApprovalBased",
+  token: TOKEN_ADDRESS,
+  // set minimalAllowance as we defined in the paymaster contract
+  minimalAllowance: BigInt("1"),
+  // empty bytes as testnet paymaster does not use innerInput
+  innerInput: new Uint8Array(),
+});
+const gasLimit = await erc20.estimateGas.mint(wallet.address, 5, {
+  customData: {
+    gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+    paymasterParams: paymasterParams,
+  },
+});
+```
+
+在 custom-paymaster 中，为了简化示例，我们直接设定每一次调用费用是 1 ERC20，实际情况显然要复杂很多。例如用户的账户上有 100 ERC20 token，希望让paymaster代为支付gas，将所有token转走，费用从 token 数量里扣除。这个时候我们想要预估 `gaslimit` 无疑将陷入鸡生蛋还是蛋生鸡的问题中：我们需要确定的转账数量才能确定 `gaslimit`, 但在确定转账数量之前，我们需要先确定 `gaslimit` ...
+
+这里有两个建议：
+
+1. 对于一笔交易可以有个粗略的gas费用估计，比如转账操作平均成本在 10 token，但用户想要转出 95 token，显然是不可行的。
+2. 先预估不使用 paymaster 完成该操作需要多少费用，然后在其基础上加上一个固定的 paymaster 费用
 
 ## Reference
 

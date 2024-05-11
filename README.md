@@ -48,7 +48,7 @@
 - **ZK red packet**: 如何在 zkSync Era 上部署 ZK Redpacket (front-end + contracts).
 - **rollup bridge**: 如何在 zkSync Era 上部署 Rollup Bridge.
 
-### Lesson 6: Rollups原理和zkSync时代（选修）
+### Lesson 6: Rollups 原理和 zkSync Era（选修）
 
 - **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。.
 - **Boojum**: Boojum的技术原理
