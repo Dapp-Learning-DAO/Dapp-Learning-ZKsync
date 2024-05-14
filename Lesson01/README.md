@@ -218,7 +218,7 @@ const config: HardhatUserConfig = {
 contract MyERC20Token is ERC20Burnable {
     ...
 
-    constructor() ERC20("DappLearningZksyncTutorial", "DLZT") {
+    constructor() ERC20("DappLearning zkSync Tutorail", "DLZT") {
         // Default initial supply of 1 million tokens (with 18 decimals)
         uint256 initialSupply = 1_000_000 * (10 ** 18);
 
@@ -702,7 +702,7 @@ contract Account is IAccount, IERC1271, SpendLimit {
 根据交易是否调用系统合约需要区分调用方式
 
 1. 调用系统合约 `DEPLOYER_SYSTEM_CONTRACT` 需要使用特定方法，例如 `SystemContractsCaller.systemCallWithPropagatedRevert`
-2. 其他情况直接使用 Yul 的 call 语句调用
+2. 其他情况直接使用 call 语句调用
 
 **`executeTransactionFromOutside`**
 
