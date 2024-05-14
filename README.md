@@ -24,20 +24,20 @@
 - **入门示例**: 在 zkSync Era 网络上部署 ERC20, ERC721 合约并交互.
 - **Native AA**: 在 zkSync Era 网络上部署 Native AA 示例 (spend-limit)，并交互.
 
-### Lesson 2: zkSync 系统特性详解
+### Lesson 2: zkSync Era 抽象账户
+
+- **EIP-4337 概述**: 介绍 EIP-4337 及其工作原理。
+- **zkSync Era 中的 AA 机制**: 介绍 zkSync Era 中的账户抽象（AA）机制，详细说明其操作原理和工作流程.
+- **原生 AA 与 EIP-4337 的比较**: 比较 zkSync Era 中原生 AA 与 EIP-4337 的差异.
+- **费用模型与Paymaster**: 介绍 zkSync Era 中账户抽象的费用模型以及Paymaster.
+
+### Lesson 3: zkSync 系统特性详解
 
 - **L1-L2 Message**: 链接 主网 和 zkSync Era 的合约，用于证明验证以及 L2 <-> L1 通信.
 - **System Contracts**: zkSync Era 系统合约介绍.
 - **Gas Fee Model**: 解析 zkSync Era 的 gas 费用机制及其与以太坊的区别.
 - **Differences from Ethereum**: 详解 zkSync Era 与主网的区别以及开发注意事项.
 - **zkSync Bridge**: 介绍 zkSync 桥的工作方式，使用 LayerZero、Celer 网络作为例子.
-
-### Lesson 3: zkSync Era 抽象账户
-
-- **EIP-4337 概述**: 介绍 EIP-4337 及其工作原理。
-- **zkSync Era 中的 AA 机制**: 介绍 zkSync Era 中的账户抽象（AA）机制，详细说明其操作原理和工作流程.
-- **原生 AA 与 EIP-4337 的比较**: 比较 zkSync Era 中原生 AA 与 EIP-4337 的差异.
-- **费用模型与Paymaster**: 介绍 zkSync Era 中账户抽象的费用模型以及Paymaster.
 
 ### Lesson 4: DApp 部署 1
 
@@ -67,20 +67,20 @@
 - **Simple Example**: Deploying and interacting with ERC20, ERC721 contracts on the zkSync Era network.
 - **Native AA**: Deploying and interacting with a simple AA contract (spend-limit).
 
-### Lesson 2: zkSync System Features
+### Lesson 2: zkSync Era Account Abstraction
+
+- **EIP 4337 overview**: An overview of EIP 4337 and how it works.
+- **AA Mechanism in zkSync Era**: Introduce the Account Abstraction (AA) mechanism in zkSync Era, detailing its operating principles and workflow.
+- **Native AA vs EIP 4337**: Compare the differences between native AA in zkSync Era,
+- **Fee Model and Paymaster**: Introduce the Fee Model for Account Abstraction in zkSync Era and the role of Paymasters.
+
+### Lesson 3: zkSync System Features
 
 - **L1-L2 Message**: contracts connecting Ethereum and zkSync Era for proof validation and L2 <-> L1 communications.
 - **System Contracts**: Introduce the zkSync Era system contracts.
 - **Gas Fee Model**: Explain the zkSync Era gas fee mechanism and its difference from Ethereum.
 - **Differences from Ethereum**: Explain the differences from ethereum and development consideration.
 - **zkSync Bridge**: How zkSync bridge works, using LayerZero, Celer network as examples.
-
-### Lesson 3: zkSync Era Account Abstraction
-
-- **EIP 4337 overview**: An overview of EIP 4337 and how it works.
-- **AA Mechanism in zkSync Era**: Introduce the Account Abstraction (AA) mechanism in zkSync Era, detailing its operating principles and workflow.
-- **Native AA vs EIP 4337**: Compare the differences between native AA in zkSync Era,
-- **Fee Model and Paymaster**: Introduce the Fee Model for Account Abstraction in zkSync Era and the role of Paymasters.
 
 ### Lesson 4: DApp Development 1
 
