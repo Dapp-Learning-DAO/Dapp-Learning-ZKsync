@@ -93,11 +93,13 @@ type DeployContractOptions = {
    * If specified, the contract will be deployed using this wallet
    */
   wallet?: Wallet;
+  overrides?: ethers.Overrides;
+  additionalFactoryDeps?: ethers.BytesLike[];
 };
 export const deployContract = async (
   contractArtifactName: string,
   constructorArguments?: any[],
-  options?: DeployContractOptions,
+  options?: DeployContractOptions
 ) => {
   const log = (message: string) => {
     if (!options?.silent) console.log(message);
@@ -112,7 +114,7 @@ export const deployContract = async (
     .catch((error) => {
       if (
         error?.message?.includes(
-          `Artifact for contract "${contractArtifactName}" not found.`,
+          `Artifact for contract "${contractArtifactName}" not found.`
         )
       ) {
         console.error(error.message);
@@ -125,7 +127,7 @@ export const deployContract = async (
   // Estimate contract deployment fee
   const deploymentFee = await deployer.estimateDeployFee(
     artifact,
-    constructorArguments || [],
+    constructorArguments || []
   );
   log(`Estimated deployment cost: ${ethers.formatEther(deploymentFee)} ETH`);
 
@@ -133,7 +135,12 @@ export const deployContract = async (
   await verifyEnoughBalance(wallet, deploymentFee);
 
   // Deploy the contract to zkSync
-  const contract = await deployer.deploy(artifact, constructorArguments);
+  const contract = await deployer.deploy(
+    artifact,
+    constructorArguments,
+    options?.overrides,
+    options?.additionalFactoryDeps
+  );
   const address = await contract.getAddress();
   const constructorArgs = contract.interface.encodeDeploy(constructorArguments);
   const fullContractSource = `${artifact.sourceName}:${artifact.contractName}`;

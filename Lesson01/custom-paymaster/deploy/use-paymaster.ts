@@ -28,6 +28,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const provider = getProvider();
   const wallet = getWallet();
 
+  // Supplying the ERC20 tokens to the wallet:
+  // We will give the wallet 3 units of the token:
+  const erc20 = getToken(hre, wallet);
+  await (await erc20.mint(wallet.address, 3)).wait();
+
   console.log(
     `ERC20 token balance of the wallet before mint: ${await wallet.getBalance(
       TOKEN_ADDRESS,
@@ -37,7 +42,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   let paymasterBalance = await provider.getBalance(PAYMASTER_ADDRESS);
   console.log(`Paymaster ETH balance is ${paymasterBalance.toString()}`);
 
-  const erc20 = getToken(hre, wallet);
   const gasPrice = await provider.getGasPrice();
 
   // Encoding the "ApprovalBased" paymaster flow's input

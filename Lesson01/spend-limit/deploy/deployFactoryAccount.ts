@@ -30,6 +30,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     [utils.hashBytecode(aaArtifact.bytecode)],
     {
       wallet,
+      additionalFactoryDeps: [aaArtifact.bytecode], // ⚠️ NOTICE: very important!!
     }
   );
   const factoryAddress = await factory.getAddress();
@@ -46,7 +47,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const salt = ethers.ZeroHash;
 
-  const tx = await aaFactory.deployAccount(salt, owner.address, {gasLimit: 800000});
+  const tx = await aaFactory.deployAccount(salt, owner.address);
   await tx.wait();
 
   const abiCoder = new ethers.AbiCoder();
@@ -63,14 +64,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   await (
     await wallet.sendTransaction({
       to: accountAddress,
-      value: ethers.parseEther("0.02"),
+      value: ethers.parseEther("0.002"),
     })
   ).wait();
 
-  const DeploymentsDir = path.join(
-    __dirname,
-    "./Deployments.json"
-  );
+  const DeploymentsDir = path.join(__dirname, "./Deployments.json");
   let deploymentsData: any = {};
   if (fs.existsSync(DeploymentsDir)) {
     const data = fs.readFileSync(DeploymentsDir);
@@ -83,14 +81,12 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   }
   deploymentsData = {
     ...deploymentsData,
+    AAFACTORY_ADDRESS: factoryAddress,
     DEPLOYED_ACCOUNT_OWNER_PRIVATE_KEY: owner.privateKey,
     DEPLOYED_ACCOUNT_ADDRESS: accountAddress,
     RECEIVER_ACCOUNT: owner.address,
   };
-  fs.writeFileSync(
-    DeploymentsDir,
-    JSON.stringify(deploymentsData, null, 2)
-  );
+  fs.writeFileSync(DeploymentsDir, JSON.stringify(deploymentsData, null, 2));
 
   console.log(`Done!`);
 }

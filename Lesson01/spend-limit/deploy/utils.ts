@@ -91,6 +91,8 @@ type DeployContractOptions = {
    * If specified, the contract will be deployed using this wallet
    */
   wallet?: Wallet;
+  overrides?: ethers.Overrides;
+  additionalFactoryDeps?: ethers.BytesLike[];
 };
 export const deployContract = async (
   contractArtifactName: string,
@@ -131,7 +133,12 @@ export const deployContract = async (
   await verifyEnoughBalance(wallet, deploymentFee);
 
   // Deploy the contract to zkSync
-  const contract = await deployer.deploy(artifact, constructorArguments);
+  const contract = await deployer.deploy(
+    artifact,
+    constructorArguments,
+    options?.overrides,
+    options?.additionalFactoryDeps
+  );
   const address = await contract.getAddress();
   const constructorArgs = contract.interface.encodeDeploy(constructorArguments);
   const fullContractSource = `${artifact.sourceName}:${artifact.contractName}`;

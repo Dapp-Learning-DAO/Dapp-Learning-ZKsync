@@ -716,6 +716,29 @@ contract Account is IAccount, IERC1271, SpendLimit {
   3. 调用 `AAFactory.deployAccount` 方法创建 Account 合约
   4. 向 `Acount` 合约转入 ETH 作为账户资金
 
+> ！！注意：因为我们使用了工厂合约来创建 Account 合约，对于zksync网络而言，Account 合约的 hash 可能还没有注册到 `KnownCodesStorage` 系统合约中，进而导致创建合约失败，所以在部署 AAFactory 合约时，一定要增加 `additionalFactoryDeps` 字段，将 Account 合约的 bytecode 传给 Operator
+
+```ts
+// spend-limit/deploy/deployFactoryAccount.ts
+
+export default async function (hre: HardhatRuntimeEnvironment) {
+  ...
+
+  const factory = await deployContract(
+    "AAFactory",
+    [utils.hashBytecode(aaArtifact.bytecode)],
+    {
+      wallet,
+      // ⚠️ NOTICE: very important!! 非常重要！！
+      additionalFactoryDeps: [aaArtifact.bytecode],
+    }
+  );
+  const factoryAddress = await factory.getAddress();
+  console.log(`AA factory address: ${factoryAddress}`);
+  ...
+}
+```
+
 ```sh
 yarn hardhat deploy-zksync --script deployFactoryAccount.ts --network zkSyncSepoliaTestnet
 
@@ -745,10 +768,10 @@ Done!
   2. 获取 `Account.setSpendingLimit` 调用交易，并根据 native AA 格式组装
      a. from 是 Account 合约
      b. nonce 是 Account 的 nonce
-     c. type 113
+     c. type 113 代表该交易遵循 EIP-712 规范
      d. customData 包含 `signature` 签名和 gas 相关参数
 
-  3. 使用 `provider.broadcastTransaction` 广播交易，交易将被系统自动转发给 system contract，开始 native AA 流程
+  3. 使用 `provider.broadcastTransaction` 广播交易，开始 native AA 流程
 
   ```ts
   let setLimitTx = await account.setSpendingLimit.populateTransaction(
@@ -806,7 +829,7 @@ Time to reset limit:  1713844093
   3. 使用 `provider.broadcastTransaction` 广播交易，交易将被系统自动转发给 system contract，开始 native AA 流程
 
 ```sh
-yarn hardhat deploy-zksync --script setLimit.ts --network zkSyncSepoliaTestnet
+yarn hardhat deploy-zksync --script transferETH.ts --network zkSyncSepoliaTestnet
 
 # output
 Account ETH limit is:  5000000000000000
@@ -825,6 +848,22 @@ Reset time was not updated as not enough time has passed
 
 - 此时我们如果再次发起转账，将会revert，得到 "Exceed daily limit" 的报错信息，显示我们今日触及消费上限，不能继续转账
 
+```sh
+yarn hardhat deploy-zksync --script transferETH.ts --network zkSyncSepoliaTestnet
+
+Error: missing revert data (action="estimateGas", data=null, reason=null,
+...
+  info: {
+    error: {
+      code: 3,
+      message: 'execution reverted: Exceed daily limit',
+      data: '0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000012457863656564206461696c79206c696d69740000000000000000000000000000'
+    },
+    ...
+  }
+}
+```
+
 ### Custom-Paymaster
 
 接下来我们将构建一个自定义支付代理（paymaster），允许用户使用任何 ERC20 代币支付 gas 费用：
@@ -835,7 +874,7 @@ Reset time was not updated as not enough time has passed
 
 #### Custom-Paymaster interface
 
-我们只需要构建一个 Paymaster 和 测试用ERC20 即可完成整个流程，并且在 paymaster 中只需要实现 2 个由系统合约 `bootloader` 调用的函数即可，剩下的流程将有系统完成。
+我们只需要构建一个 Paymaster 和 测试用ERC20 即可完成整个流程，并且在 paymaster 中只需要实现 2 个由系统合约 `bootloader` 调用的函数即可。
 
 - `validateAndPayForPaymasterTransaction` 验证交易
   - 验证交易中的 `paymasterInput` 格式(该交易的实际calldata), 取出 function selector
@@ -933,6 +972,85 @@ library TransactionHelper {
         }
     }
 }
+```
+
+### custom-paymaster scripts
+
+- `deploy-paymaster.ts`
+  - 部署 `MyPamaster` 合约
+  - 为其转入 ETH 作为 gas 费用
+  - 部署 `MyERC20` 合约，作为用户支付 gas 的token
+  - 为用户 mint 3 token
+
+```sh
+❯ npx hardhat deploy-zksync --script deploy-paymaster.ts  --network zkSyncSepoliaTestnet
+
+Starting deployment process of "MyERC20"...
+Estimated deployment cost: 0.0011346448077522 ETH
+
+"MyERC20" was successfully deployed:
+ - Contract address: 0x2B8606a2C352303d39fcb5f2773B31a0c0807eFF
+ - Contract source: contracts/MyERC20.sol:MyERC20
+ - Encoded constructor arguments: 0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000001200000000000000000000000000000000000000000000000000000000000000074d79546f6b656e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000074d79546f6b656e00000000000000000000000000000000000000000000000000
+
+Requesting contract verification...
+Your verification ID is: 13196
+Contract successfully verified on zkSync block explorer!
+
+Starting deployment process of "MyPaymaster"...
+Estimated deployment cost: 0.000710003298384822 ETH
+
+"MyPaymaster" was successfully deployed:
+ - Contract address: 0x9c2198dA8593908C5138CeF84308d90b187154a1
+ - Contract source: contracts/MyPaymaster.sol:MyPaymaster
+ - Encoded constructor arguments: 0x0000000000000000000000002b8606a2c352303d39fcb5f2773b31a0c0807eff
+
+Requesting contract verification...
+Your verification ID is: 13197
+Contract successfully verified on zkSync block explorer!
+Funding paymaster with ETH...
+Paymaster ETH balance is now 10000000000000000
+Minted 3 tokens for the wallet
+Done!
+```
+
+- `use-paymaster.ts` 为用户 mint 5 token，使用 paymaster 支付
+  - `paymasterParams` 组装，使用 `approvalBased` 类型，这种类型在支付之前，会让用户 approve 给 paymaster 足够的额度
+  - `customData` 字段中传入 paymasterParams 时，系统会将该交易识别为使用 paymaster 的 native AA 交易类型
+  - 这一笔交易我们给用户 mint 5 token，但需要向 paymaster 支付 1 token 作为gas费用，所以最后用户 token 余额增加 4，而 paymaster 余额增加1
+
+```ts
+// Encoding the "ApprovalBased" paymaster flow's input
+const paymasterParams = utils.getPaymasterParams(PAYMASTER_ADDRESS, {
+  type: "ApprovalBased",
+  token: TOKEN_ADDRESS,
+  // set minimalAllowance as we defined in the paymaster contract
+  minimalAllowance: BigInt("1"),
+  // empty bytes as testnet paymaster does not use innerInput
+  innerInput: new Uint8Array(),
+});
+
+console.log(`Minting 5 tokens for the wallet via paymaster...`);
+const mintTx = await erc20.mint(wallet.address, 5, {
+  // paymaster info
+  customData: {
+    paymasterParams: paymasterParams,
+    gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
+  },
+});
+await mintTx.wait();
+```
+
+```sh
+❯ npx hardhat deploy-zksync --script use-paymaster.ts  --network zkSyncSepoliaTestnet
+
+ERC20 token balance of the wallet before mint: 3
+Paymaster ETH balance is 10000000000000000
+Transaction fee estimation is :>>  1257508623149800
+Minting 5 tokens for the wallet via paymaster...
+Paymaster ERC20 token balance is now 1
+Paymaster ETH balance is now 9989472675000000
+ERC20 token balance of the the wallet after mint: 7
 ```
 
 ## TODO
