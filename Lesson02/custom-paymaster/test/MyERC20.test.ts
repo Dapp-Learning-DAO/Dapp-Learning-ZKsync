@@ -3,7 +3,6 @@ import { Wallet, Provider, Contract } from "zksync-ethers";
 import * as hre from "hardhat";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
 import * as ethers from "ethers";
-import "@matterlabs/hardhat-zksync-chai-matchers";
 
 import { deployContract, fundAccount } from "./utils";
 

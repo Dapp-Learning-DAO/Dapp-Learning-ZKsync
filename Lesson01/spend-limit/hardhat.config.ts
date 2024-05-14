@@ -1,11 +1,6 @@
-import "@nomicfoundation/hardhat-chai-matchers";
-import "@matterlabs/hardhat-zksync-deploy";
-import "@matterlabs/hardhat-zksync-solc";
-import "@matterlabs/hardhat-zksync-verify";
-import "@matterlabs/hardhat-zksync-node";
-import * as dotenv from "dotenv";
-
 import { HardhatUserConfig } from "hardhat/config";
+import "@matterlabs/hardhat-zksync";
+import * as dotenv from "dotenv";
 
 dotenv.config();
 

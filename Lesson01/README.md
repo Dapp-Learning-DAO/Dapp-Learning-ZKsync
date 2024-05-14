@@ -89,7 +89,9 @@ tree -I 'node_modules'
         └── mynft.test.ts
 ```
 
-- 查看 `hardhat.config.ts` 的配置，在刚才通过模板创建的项目中，已经预先配置了 zksync Era 主网，测试网，以及本地测试网
+查看 `hardhat.config.ts` 的配置，主要有三个需要注意的地方：
+
+- 在刚才通过模板创建的项目中，已经预先配置了 zksync Era 主网，测试网，以及本地测试网
   - `zkSyncMainnet` 主网
   - `zkSyncSepoliaTestnet` zksync sepolia 测试网
   - `zkSyncGoerliTestnet` zksync goerli 测试网 ([zksync goerli 网络即将关闭](https://github.com/zkSync-Community-Hub/zksync-developers/discussions/228)，不建议使用)
@@ -97,10 +99,19 @@ tree -I 'node_modules'
   - `inMemoryNode` 本地测试网络
   - `hardhat` hardhat zksync 本地测试网络
 
-> `inMemoryNode` 可以理解为 zksync Era 版本的 `hardhat node`, 是 zksync Era 用于本地测试的持久化节点; 另外如果需要方便的在hardhat中测试部署脚本，可以使用 `@matterlabs/hardhat-zksync-node`
+- `@matterlabs/hardhat-zksync` 会将 zksync hardhat 相关插件打包安装，包括 `@matterlabs/hardhat-zksync-solc`, `@matterlabs/hardhat-zksync-deploy`, `@matterlabs/hardhat-zksync-verify`, `@matterlabs/hardhat-zksync-node` 等，并且集成一些常用的 hardhat task 配置。
+
+- zksolc 配置，对应 hardhat-zksync-solc 的版本，可以直接写 latest
+
+> `inMemoryNode` 可以理解为 zksync Era 版本的 `hardhat node`, 是 zksync Era 用于本地测试的持久化节点;
 
 ```ts
 // hardhat-zksync-project/hardhat.config.ts
+import { HardhatUserConfig } from "hardhat/config";
+
+// 一定不要忘了引入 `@matterlabs/hardhat-zksync`
+import "@matterlabs/hardhat-zksync";
+
 const config: HardhatUserConfig = {
   defaultNetwork: "zkSyncSepoliaTestnet",
   networks: {
@@ -151,7 +162,12 @@ const config: HardhatUserConfig = {
 
 #### 启动本地测试网络
 
-有两种启动本地持久化测试节点的方法，一种是直接运行 era_test_node （建议），一种是 zksync-cli + docker
+有三种启动本地持久化测试节点的方法，一种是使用 `@matterlabs/hardhat-zksync-node` ，一种是直接运行 era_test_node ，一种是 zksync-cli + docker
+
+- [`@matterlabs/hardhat-zksync-node`](https://www.npmjs.com/package/@matterlabs/hardhat-zksync-node)
+  - 在 hardhat 项目中，安装了 `@matterlabs/hardhat-zksync` 插件
+  - 运行 `npx hardhat node-zksync`
+  - 如果使用模板创建项目，注意替换 rich accounts，模板默认的 rich accounts 与 `@matterlabs/hardhat-zksync-node` 不同
 
 - [era_test_node](https://github.com/matter-labs/era-test-node)
   - 需要安装Rust环境

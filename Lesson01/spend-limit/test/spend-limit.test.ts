@@ -85,9 +85,9 @@ describe("Deployment, Setup & Transfer", function () {
     const txReceipt = await sendTx(provider, account, user, tx);
     await txReceipt.wait();
 
-    expect(await provider.getBalance(accountAddress)).to.be.closeTo(
-      balances.AccountETHBal - toBN("5"),
-      toBN("0.01")
+    expect(Number(await provider.getBalance(accountAddress))).to.be.closeTo(
+      Number(balances.AccountETHBal - toBN("5")),
+      Number(toBN("0.01"))
     );
     expect(await provider.getBalance(await user.getAddress())).to.eq(
       balances.UserETHBal + toBN("5")
@@ -211,7 +211,7 @@ describe("Spending Limit Updates to make a transfer", function () {
     await txReceipt3.wait();
 
     expect(await provider.getBalance(accountAddress)).to.be.closeTo(
-      balances.AccountETHBal- toBN("15"),
+      balances.AccountETHBal - toBN("15"),
       toBN("0.01")
     );
     expect(await provider.getBalance(user.address)).to.eq(
@@ -251,11 +251,11 @@ describe("Spending Limit Updates to make a transfer", function () {
     await txReceipt3.wait();
 
     expect(await provider.getBalance(accountAddress)).to.be.closeTo(
-      balances.AccountETHBal- toBN("30"),
+      balances.AccountETHBal - toBN("30"),
       toBN("0.01")
     );
     expect(await provider.getBalance(user.address)).to.eq(
-      balances.UserETHBal- toBN("30")
+      balances.UserETHBal - toBN("30")
     );
 
     const limit = await account.limits(ETH_ADDRESS);

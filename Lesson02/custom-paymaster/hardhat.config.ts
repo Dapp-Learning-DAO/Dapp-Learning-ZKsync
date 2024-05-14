@@ -1,9 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 
-import "@matterlabs/hardhat-zksync-deploy";
-import "@matterlabs/hardhat-zksync-solc";
-import "@matterlabs/hardhat-zksync-node";
-import "@matterlabs/hardhat-zksync-verify";
+import "@matterlabs/hardhat-zksync";
 
 const config: HardhatUserConfig = {
   zksolc: {
@@ -12,7 +9,7 @@ const config: HardhatUserConfig = {
       isSystem: true,
     },
   },
-  defaultNetwork: "inMemoryNode",
+  defaultNetwork: "hardhat",
   networks: {
     zkSyncSepoliaTestnet: {
       url: "https://sepolia.era.zksync.dev",

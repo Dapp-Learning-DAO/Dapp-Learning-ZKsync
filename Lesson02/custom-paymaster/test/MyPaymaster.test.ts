@@ -2,13 +2,12 @@ import { expect } from "chai";
 import { Wallet, Provider, Contract, utils } from "zksync-ethers";
 import * as hre from "hardhat";
 import { Deployer } from "@matterlabs/hardhat-zksync-deploy";
-import * as ethers from "ethers";
 import "@matterlabs/hardhat-zksync-chai-matchers";
 
 import { deployContract, fundAccount } from "./utils";
+import { getWallet } from "../deploy/utils";
 
 import dotenv from "dotenv";
-import { getWallet } from "../deploy/utils";
 dotenv.config();
 
 // rich wallet from era-test-node
