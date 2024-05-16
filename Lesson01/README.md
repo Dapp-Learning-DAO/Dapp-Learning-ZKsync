@@ -1,6 +1,6 @@
 # Lesson 1: Quick Introduction to zkSync Development
 
-## Quick Introduction to zkSync Development
+## Quick Introduction to zkSync Development and Native AA
 
 ### Prerequisites
 
