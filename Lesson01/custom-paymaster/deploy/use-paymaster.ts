@@ -52,6 +52,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     // empty bytes as testnet paymaster does not use innerInput
     innerInput: new Uint8Array(),
   });
+  console.log("paymasterParams", paymasterParams);
 
   // Estimate gas fee for mint transaction
   const gasLimit = await erc20.mint.estimateGas(wallet.address, 5, {

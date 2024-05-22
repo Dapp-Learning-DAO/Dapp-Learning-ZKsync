@@ -13,7 +13,7 @@ EOA 与 CA 最大的区别在于，EOA 可以作为交易发起者，而 Contrac
 
 ![Lesson02_01](./docs/img/Lesson02_01.png)
 
-对于普通用户而言 EOA 账户最大的问题在于密钥的丢失意味着失去了一切账户资产和控制权，另外EOA的验证只能使用 ESDSA 签名算法，以及只能使用 ETH 作为gas等缺点。
+对于普通用户而言 EOA 账户最大的问题在于密钥的丢失意味着失去了一切账户资产和控制权，另外 EOA 的验证只能使用 ESDSA 签名算法，以及只能使用 ETH 作为 gas 等缺点。
 
 ![Lesson02_02](./docs/img/Lesson02_02.png)
 
@@ -34,21 +34,21 @@ EOA 与 CA 最大的区别在于，EOA 可以作为交易发起者，而 Contrac
 
 ![Lesson02_03](./docs/img/Lesson02_03.png)
 
-Bundler 以 ETH 支付捆绑交易的 gas 费用，并通过作为所有单独UserOperation执行的一部分支付的费用获得补偿。捆绑者将UserOperation根据与矿工在现有交易内存池中操作方式类似的费用优先级逻辑来选择要包含的对象。 `UserOperation` 看起来像是一笔交易，包含:
+Bundler 以 ETH 支付捆绑交易的 gas 费用，并通过作为所有单独 UserOperation 执行的一部分支付的费用获得补偿。Bundler 将 UserOperation 选择要包含的对象（比如与矿工在现有交易内存池中操作方式类似的费用优先级逻辑）。 `UserOperation` 看起来像是一笔交易，包含:
 
 - `sender`：发起该操作的的账户地址
-- `nonce and signature`：传递到AA钱包验证函数的参数，以便AA钱包可以验证操作
-- `initCode`：如果AA钱包尚不存在，则用于创建钱包的初始化代码
+- `nonce and signature`：传递到 AA 钱包验证函数的参数，以便 AA 钱包可以验证操作
+- `initCode`：如果 AA 钱包尚不存在，则用于创建钱包的初始化代码
 - `callData`：在实际执行步骤中调用钱包的数据
 
-AA钱包是一个智能合约，需要具备两个主要功能：
+AA 钱包是一个智能合约，需要具备两个主要功能：
 
 - `validateUserOp`，它接受 `UserOperation` 作为输入。该函数的作用是验证 `UserOperation` 的 `nonce` 和 `signature`，如果验证成功则支付费用并增加 `nonce` ，如果验证失败则抛出异常。
-- `execution function`，解析 calldata 作为AA钱包的操作指令，并执行。
+- `execution function`，解析 calldata 作为 AA 钱包的操作指令，并执行。
 
-为了简化AA钱包的逻辑，确保安全等的许多复杂的智能合约逻辑不会包含其中，而是在称为 `EntryPoint` 的全局合约中。
+为了简化 AA 钱包的逻辑，确保安全等的许多复杂的智能合约逻辑不会包含其中，而是在称为 `EntryPoint` 的全局合约中。
 
-而在AA钱包中，将通过 `require(msg.sender == ENTRY_POINT)` 的简单检查来保证安全性，因此只有受信任的 `EntryPoint` 才能调用AA钱包执行任何操作或支付费用。`EntryPoint` 只在 `validateUserOp` 验证成功后调用 `UserOperation`，因此这足以保护AA钱包免受攻击。另外如果AA钱包尚不存在，`EntryPoint` 还负责使用提供的 `initCode` 创建AA钱包。
+而在 AA 钱包中，将通过 `require(msg.sender == ENTRY_POINT)` 的简单检查来保证安全性，因此只有受信任的 `EntryPoint` 才能调用 AA 钱包执行任何操作或支付费用。`EntryPoint` 只在 `validateUserOp` 验证成功后调用 `UserOperation`，因此这足以保护 AA 钱包免受攻击。另外如果 AA 钱包尚不存在，`EntryPoint` 还负责使用提供的 `initCode` 创建 AA 钱包。
 
 ![Lesson02_04](./docs/img/Lesson02_04.png)
 
@@ -62,31 +62,31 @@ AA钱包是一个智能合约，需要具备两个主要功能：
 
 **验证阶段** `EtnryPoint` 会批量验证 Bundle Transaction 内的所有 `UserOps` (多个用户的多笔操作)
 
-- 2 (3,4) 如果属于用户1的AA钱包1不存在，`EtnryPoint` 会调用 `Factory` 创建 AA钱包
-- 5 `EtnryPoint` 调用用户1的AA钱包1 `validateUserOp` 函数验证该操作是否合法
-- 6 AA钱包1在 `EtnryPoint` 中存入ETH以支付接下来的操作产生的gas
-- 7 `EtnryPoint` 扣除AA钱包1的 gas 费用
-- 8 `EtnryPoint` 调用用户2 的AA钱包2 `validateUserOp` 函数验证该操作是否合法
-- 9 AA钱包2在 `EtnryPoint` 中存入ETH以支付接下来的操作产生的gas
-- 10 `EtnryPoint` 扣除AA钱包2的 gas 费用
+- 2 (3,4) 如果属于用户 1 的 AA 钱包 1 不存在，`EtnryPoint` 会调用 `Factory` 创建 AA 钱包
+- 5 `EtnryPoint` 调用用户 1 的 AA 钱包 1 `validateUserOp` 函数验证该操作是否合法
+- 6 AA 钱包 1 在 `EtnryPoint` 中存入 ETH 以支付接下来的操作产生的 gas
+- 7 `EtnryPoint` 扣除 AA 钱包 1 的 gas 费用
+- 8 `EtnryPoint` 调用用户 2 的 AA 钱包 2 `validateUserOp` 函数验证该操作是否合法
+- 9 AA 钱包 2 在 `EtnryPoint` 中存入 ETH 以支付接下来的操作产生的 gas
+- 10 `EtnryPoint` 扣除 AA 钱包 2 的 gas 费用
 
 **执行阶段**
 
-- 11 调用AA钱包1的 exec 函数执行用户1的操作
-- 12 为AA钱包1执行refund（退回多余的gas费用）
-- 13 调用AA钱包2的 exec 函数执行用户1的操作
-- 14 为AA钱包2执行refund（退回多余的gas费用）
+- 11 调用 AA 钱包 1 的 exec 函数执行用户 1 的操作
+- 12 为 AA 钱包 1 执行 refund（退回多余的 gas 费用）
+- 13 调用 AA 钱包 2 的 exec 函数执行用户 1 的操作
+- 14 为 AA 钱包 2 执行 refund（退回多余的 gas 费用）
 
 **完成阶段**
 
-- 15 完成所有调用，补偿受益人（可能是Bundler的维护者）
+- 15 完成所有调用，补偿受益人（可能是 Bundler 的维护者）
 
 #### Paymaster(EIP-4337)
 
-在上述流程中，用户仍然必须拥有足够的ETH来支付费用，而很多场景下，用户往往希望用其他方式支付费用，于是便有了 Paymaster 这个角色，可以代替用户使用ETH支付gas费用。我们需要 Paymaster 具备两个主要功能：
+在上述流程中，用户仍然必须拥有足够的 ETH 来支付费用，而很多场景下，用户往往希望用其他方式支付费用，于是便有了 Paymaster 这个角色，可以代替用户使用 ETH 支付 gas 费用。我们需要 Paymaster 具备两个主要功能：
 
 - 允许第三方代表用户支付费用
-- 允许用户以 ERC20 token (非ETH资产)支付费用，以合约作为媒介收取 ERC20 并以 ETH 支付
+- 允许用户以 ERC20 token (非 ETH 资产)支付费用，以合约作为媒介收取 ERC20 并以 ETH 支付
 
 Paymaster 需要验证两个条件：
 
@@ -98,11 +98,11 @@ Paymaster 需要验证两个条件：
 那么包含 Paymster 的完整流程如下：
 
 1. 发送 `UserOps` 到 `EntryPoint`
-2. `EntryPoint` 调用 AA钱包的 `validateUserOp` 验证操作是否合法
+2. `EntryPoint` 调用 AA 钱包的 `validateUserOp` 验证操作是否合法
 3. `EntryPoint` 调用 Paymaster 的 `validatePaymasterUserOp` 验证 Paymaster 是否愿意为该操作支付费用
 4. `EntryPoint` 扣除 Paymaster 的存款作为 gas 费用
-5. `EntryPoint` 调用 AA钱包的 `exec` 执行操作
-6. `EntryPoint` 调用 Paymaster 的 `postOp` 函数（该函数由 Paymaster自定义，通常用户更新状态，广播 event 等等）
+5. `EntryPoint` 调用 AA 钱包的 `exec` 执行操作
+6. `EntryPoint` 调用 Paymaster 的 `postOp` 函数（该函数由 Paymaster 自定义，通常用户更新状态，广播 event 等等）
 7. refund paymster 退还 Paymaster 多余的费用
 
 ## AA Mechanism in zkSync Era
@@ -112,8 +112,8 @@ zkSync Era 上的账户抽象协议 (以下简称 Native AA) 与 EIP-4337 非常
 Native AA 中的组成:
 
 - `bootloader`: System Contract(系统合约)，主要功能是处理用户的操作交易(userOps)，对应 EIP-4337 中的 `EntryPoint` 合约。`bootloader` 只能被系统调用，无法被外部使用者调用。
-- `NonceHolder`: System Contract(系统合约)，该合约存储账户nonce值，以及修改nonce (通常调用 `incrementMinNonceIfEquals` 函数)。
-- `AAccount`: 继承 `IAcount` 接口的 AA钱包合约，可以自定义实现，但必须实现规定的接口:
+- `NonceHolder`: System Contract(系统合约)，该合约存储账户 nonce 值，以及修改 nonce (通常调用 `incrementMinNonceIfEquals` 函数)。
+- `AAccount`: 继承 `IAcount` 接口的 AA 钱包合约，可以自定义实现，但必须实现规定的接口:
   - `validateTransaction` 必须实现
   - `executeTransaction` 必须实现
   - `payForTransaction` 和 `prepareForPaymaster` 必须至少实现 1 个
@@ -121,61 +121,64 @@ Native AA 中的组成:
 - Paymaster: 继承 `IPaymaster` 接口的合约，可以自定义实现，但必须实现规定的接口:
   - `validateAndPayForPaymasterTransaction` 必须实现，用以确认 paymaster 是否原因承担该交易的费用
   - `postTransaction` 可选实现，在操作交易完成后 `bootloader` 会调用此方法
-- `AAFactory`: 可选实现，用于创建自定义 AA钱包 的工厂合约；
+- `AAFactory`: 可选实现，用于创建自定义 AA 钱包 的工厂合约；
 
-> **在 zkSync 上，每个地址都是一个合约**。用户可以从他们的 EOA 账户开始交易，因为每个没有部署任何合约的地址都**隐式包含 DefaultAccount.sol(系统合约)** 中定义的代码。每当有人调用不在 `kernel space` (内核空间 即地址≥2^16) 且没有部署任何合约代码的合约时， 的代码DefaultAccount将被用作合约的代码。
+> **在 zkSync 上，每个地址都是一个合约**。用户可以从他们的 EOA 账户开始交易，因为每个没有部署任何合约的地址都**隐式包含 DefaultAccount.sol(系统合约)** 中定义的代码。每当有人调用不在 `kernel space` (内核空间 即地址 ≥2^16) 且没有部署任何合约代码的合约时， 的代码 DefaultAccount 将被用作合约的代码。
 
 ### Native AA transaction flow
 
 ![zksync-AA-tx-flow.svg](../Lesson01/docs/img/zksync-AA-tx-flow.svg)
 
-**初始化自定义AA钱包**
+**初始化自定义 AA 钱包**
 
-如果需要实现自定义AA钱包逻辑，那么就需要实现一个工厂合约来部署 `AAccount` 合约。
+如果需要实现自定义 AA 钱包逻辑，那么就需要实现一个工厂合约来部署 `AAccount` 合约。
 
-1. 调用 `AAFactory.deployAccount()` 函数，触发AA钱包的初始化(部署合约)
+1. 调用 `AAFactory.deployAccount()` 函数，触发 AA 钱包的初始化(部署合约)
 2. `AAFactory` 调用系统合约 `ContractDeployer` 的 `create2Account` 函数部署新的 `AAccount` 合约
 3. 系统合约 `ContractDeployer` 创建 `AAccount` 合约
 4. 系统合约 `ContractDeployer` 将新合约地址返回给 `AAFactory`
 
 **验证阶段**
 
-用户向网络中广播 Native AA 操作请求(没有支付gas)，zksync Era 系统会自动触发 `AAccount` 的相关方法
+用户向网络中广播 Native AA 操作请求(没有支付 gas)，zksync Era 系统会自动触发 `AAccount` 的相关方法
 
 1. `AAccount` 调用系统合约 `NonceHolder` 中的方法检查 AAccount 的 nonce，并更新（ 通常调用 `incrementMinNonceIfEquals` 函数）
 2. `AAccount.validateTransaction` 验证操作的合法性
-3. 系统合约 `BootLoader` 将新的nonce标记为已使用；`AAccount` 检查余额是否足够支付gas，用户签名是否正确
+3. 系统合约 `BootLoader` 将新的 nonce 标记为已使用；`AAccount` 检查余额是否足够支付 gas，用户签名是否正确
 4. 支付 gas 费用，将有两种方式：
    a. `AAccount` 直接支付 gas 费用，`BootLoader` 调用 `AAccount.payForTransaction` 函数
    b. 委托 `Paymaster` 代为支付 gas 费用
-   - `BootLoader` 调用 `AAccount.prepareForPaymaster` 函数(如果涉及 ERC20 支付费用，这里会调用 `ERC20.approve` 授权给 paymaster 转走token);
-   - `BootLoader` 调用 `Paymaster.validateAndPayForPaymasterTransaction` 函数，这里将实现验证交易和向 `BootLoader` 支付gas费用的逻辑，例如 `transferFrom` ERC20 token，并向 `BootLoader` 转账 ETH
-5. `BootLoader` 检查收到的 ETH 数额是否足以支付gas费用
+   - `BootLoader` 调用 `AAccount.prepareForPaymaster` 函数(如果涉及 ERC20 支付费用，这里会调用 `ERC20.approve` 授权给 paymaster 转走 token);
+   - `BootLoader` 调用 `Paymaster.validateAndPayForPaymasterTransaction` 函数，这里将实现验证交易和向 `BootLoader` 支付 gas 费用的逻辑，例如 `transferFrom` ERC20 token，并向 `BootLoader` 转账 ETH
+5. `BootLoader` 检查收到的 ETH 数额是否足以支付 gas 费用
+
+**执行阶段**
+
 6. `BootLoader` 调用 `AAccount.executeTransaction` 执行操作
 7. 如果使用了 Paymaster 支付费用，操作执行成功后 `BootLoader` 调用 `Paymaster.postTransaction` 函数
 
-### Native AA vs EIP-4337
+### zkSync Native AA vs EIP-4337
 
-| Comparison               | Native AA                 | EIP-4337                        |
-| ------------------------ | ------------------------- | ------------------------------- |
-| Defined in               | Protocol + contract level | contract level                  |
-| Trigger Verify & Execute | bootloader                | Bundler → EntryPoint            |
-| Determine Tx order       | Sequencer                 | Bundler                         |
-| Send Tx before deploy    | no                        | yes, with initCode              |
-| Dev. Threshold           | Low (contract)            | Medium (bundler SDK + contract) |
-| SHOULD Limit Caller      | only Bootloader           | only EntryPoint                 |
-| Validate Function        | validateTransaction       | validateUserOp                  |
-| Execute Function         | executeTransaction        | No Rules                        |
+| Comparison               | zkSync Native AA          | EIP-4337                        | Starknet                  |
+| ------------------------ | ------------------------- | ------------------------------- | ------------------------- |
+| Defined in               | Protocol + contract level | contract level                  | Protocol + contract level |
+| Trigger Verify & Execute | Operator + bootloader     | Bundler → EntryPoint            | Sequencer                 |
+| Determine Tx order       | Sequencer                 | Bundler                         | Sequencer                 |
+| Send Tx before deploy    | no                        | yes, with initCode              | no                        |
+| Dev. Threshold           | Low (contract)            | Medium (bundler SDK + contract) | Low (contract)            |
+| SHOULD Limit Caller      | only Bootloader           | only EntryPoint                 | only Sequencer            |
+| Validate Function        | validateTransaction       | validateUserOp                  | --                        |
+| Execute Function         | executeTransaction        | executeUserOp                   | --                        |
 
 ### Fee Model and Paymaster
 
 在 EIP-4337 中，有三种类型的 Gas 限制，它们描述了不同步骤的 Gas 限制:
 
-- `verificationGasLimit` 验证操作所需的gas费用限制
-- `callGasLimit` 执行操作所需的gas费用限制
-- `preVerificationGas` 额外向Bundler支付的gas费用
+- `verificationGasLimit` 验证操作所需的 gas 费用限制
+- `callGasLimit` 执行操作所需的 gas 费用限制
+- `preVerificationGas` 额外向 Bundler 支付的 gas 费用
 
-而在 zkSync Era Native AA 只有一个字段 ，`gasLimit` 涵盖了所有三个字段的费用。提交交易时，请确保gasLimit足以支付验证、支付费用（上面提到的 ERC20 转账）以及实际执行本身。
+而在 zkSync Era Native AA 只有一个字段 ，`gasLimit` 涵盖了所有三个字段的费用。提交交易时，请确保 gasLimit 足以支付验证、支付费用（上面提到的 ERC20 转账）以及实际执行本身。
 
 #### Built-in paymaster flows
 
@@ -201,13 +204,13 @@ function approvalBased(
 
 ## Dive into Native AA with custom-paymaster
 
-接下来我们将以 [custom-paymaster](./custom-paymaster/) 为例，深入探究在 Native AA 调用过程中，究竟发生了什么，Paymaster 合约 和 zksync Era 系统合约将如何参与整个过程。
+接下来我们将以 [custom-paymaster](../Lesson01/custom-paymaster/) 为例，深入探究在 Native AA 调用过程中，究竟发生了什么，Paymaster 合约 和 zksync Era 系统合约将如何参与整个过程。
 
-假设我们有一个 zkSync Era EOA 账户，因为缺少作为 gas 费用的ETH，所以使用一个 custom-paymaster 合约代替我们支付gas。
+假设我们有一个 zkSync Era EOA 账户，因为缺少作为 gas 费用的 ETH，所以使用一个 custom-paymaster 合约代替我们支付 gas。
 
 ### step 0
 
-虽然EOA账户没有gas，但是依旧可以在交易信息 `customData` 中添加 `paymasterParams` 字段，zksync-ehters 会自动告诉网络这是一笔 Native AA 类型的交易，系统合约将尝试向指定的 Paymaster 收取gas费用，而不是你的EOA账户。
+虽然 EOA 账户没有 gas，但是依旧可以在交易信息 `customData` 中添加 `paymasterParams` 字段，zksync-ehters 会自动告诉网络这是一笔 Native AA 类型的交易，系统合约将尝试向指定的 Paymaster 收取 gas 费用，而不是你的 EOA 账户。
 
 ```ts
 // custom-paymaster/deploy/use-paymaster.ts
@@ -229,10 +232,10 @@ const mintTx = await erc20.mint(wallet.address, 5, {
 });
 ```
 
-`utils.getPaymasterParams` 是zksync-ethers中提供的组装paymaster调用的方法，处理后的数据是这样：
+`utils.getPaymasterParams` 是 zksync-ethers 中提供的组装 paymaster 调用的方法，处理后的数据是这样：
 
 - `paymaster` paymaster 合约地址
-- `paymasterInput` 是组装后的calldata，在这里我们选择使用ERC20付费给Paymaster的模式，如果选择其他模式则将编码为 `function general(bytes calldata data)`
+- `paymasterInput` 是组装后的 calldata，在这里我们选择使用 ERC20 付费给 Paymaster 的模式，如果选择其他模式则将编码为 `function general(bytes calldata data)`
 
 ```ts
 paymasterParams: {
@@ -243,9 +246,9 @@ paymasterParams: {
 }
 ```
 
-zksync-ethers 会自动将交易的 [`transaction_type`](https://docs.zksync.io/zk-stack/concepts/transaction-lifecycle.html#transaction-types) 字段赋值为 113，这代表该交易是 `EIP-712` 类型交易，该类型的交易会进一步处理，解析其中的字段信息和验证签名。我们在 spend-limit 示例中手动构建过 Native AA 交易，其中就直接赋值了 type 为113。
+zksync-ethers 会自动将交易的 [`transaction_type`](https://docs.zksync.io/zk-stack/concepts/transaction-lifecycle.html#transaction-types) 字段赋值为 113，这代表该交易是 `EIP-712` 类型交易，该类型的交易会进一步处理，解析其中的字段信息和验证签名。我们在 spend-limit 示例中手动构建过 Native AA 交易，其中就直接赋值了 type 为 113。
 
-> 由于 `transaction_type` 字段长度是 1 byte，所以不能使用712，而规定为 113。
+> 由于 `transaction_type` 字段长度是 1 byte，所以不能使用 712，而规定为 113。
 
 ```ts
 // spend-limit/deploy/transferETH.ts
@@ -290,29 +293,32 @@ processTx(txdata...)
     |__ processL2Tx(txdata...)
         |__ l2TxValidation(...)
         |   |__ ZKSYNC_NEAR_CALL_validateTx(...)
-        |       |__ callAccountMethod("validateTransaction")
+        |       |__ accountValidateTx()
+        |       |   |__ callAccountMethod("validateTransaction")
         |       |__ ensurePayment(txDataOffset, gasPrice)
-        |           |__ accountPrePaymaster()
+        |           |__ accountPayForTx() // no paymaster
+        |           |   |__ callAccountMethod("payForTransaction")
+        |           |__ accountPrePaymaster() // with paymaster
         |           |   |__ callAccountMethod("prepareForPaymaster")
         |           |__ validateAndPayForPaymasterTransaction()
         |               |__ callAccountMethod("validateAndPayForPaymasterTransaction")
         |__ l2TxExecution(...)
             |__ l2TxExecution(...)
                 |__ ZKSYNC_NEAR_CALL_executeL2Tx(...)
-                    |__ executeL2Tx()
-                        |__ callAccountMethod("executeTransaction")
+                |   |__ executeL2Tx()
+                |       |__ callAccountMethod("executeTransaction")
                 |__ refundCurrentL2Transaction()
                     |__ ZKSYNC_NEAR_CALL_callPostOp()
                         |__ call("postTransaction")
 
 ```
 
-此时大家可能会疑惑，如果是在 spend-limit 中，`from` 是 AA钱包 合约，其中包含 `validateTransaction` 接口，那么调用不会有问题，但是在 custom-paymaster 示例中，`from` 是一个EOA类型账户，在其上调用接口是否会报错？
+此时大家可能会疑惑，如果是在 spend-limit 中，`from` 是 AA 钱包 合约，其中包含 `validateTransaction` 接口，那么调用不会有问题，但是在 custom-paymaster 示例中，`from` 是一个 EOA 类型账户，在其上调用接口是否会报错？
 
 这里就需要介绍 [DefaultAccount](https://docs.zksync.io/zk-stack/components/smart-contracts/system-contracts.html#defaultaccount) ，事实上 EOA 账户可以默认为继承 DefaultAccount 的智能合约。每当账户**不满足**以下条件时：
 
 - 属于 kernel space (内核空间)
-- 上面部署了任何代码（相应存储槽下存储的值AccountCodeStorage为零）
+- 上面部署了任何代码（相应存储槽下存储的值 AccountCodeStorage 为零）
 
 该账户将使用 `DefaultAccount` 的代码。所以在 custom-paymaster 示例中，`bootloader` 将调用 `DefaultAccount.validateTransaction` 函数来验证 AA 交易。
 
@@ -417,7 +423,7 @@ contract DefaultAccount is IAccount {
   - `bootloader.accountPayForTx` 方法会调用 AAccount 的 `payForTransaction` 方法收取费用
 - 如果有指定 paymaster 则:
 
-1. `bootloader` 调用 AAccount (DefaultAccount) 的 `prepareForPaymaster` 函数，目前只有两种模式，其他情况则会revert
+1. `bootloader` 调用 AAccount (DefaultAccount) 的 `prepareForPaymaster` 函数，目前只有两种模式，其他情况则会 revert
    a. `approvalBased` 模式，需要 `ERC20.approve` 操作，授权给 paymaster
    b. `general` 模式，不会做任何操作
 
@@ -557,15 +563,15 @@ contract MyPaymaster is IPaymaster {
 
 ### step 5
 
-`bootloader` 检查收到的 ETH 是否大于等于交易所需的 ETH，如果检查通过，返还多余的ETH，下面将进入执行交易阶段
+`bootloader` 检查收到的 ETH 是否大于等于交易所需的 ETH，如果检查通过，返还多余的 ETH，下面将进入执行交易阶段
 
 ### step 6
 
 `bootloader` 调用 account (DefaultAccount) 的 `executeTransaction` 函数，执行交易操作
 
 1. 提取交易数据 `to`, `value`, `data`, `gas`
-2. 检查是否为创建合约的操作，若是则 `isSystemCall` 为true
-3. 执行call调用
+2. 检查是否为创建合约的操作，若是则 `isSystemCall` 为 true
+3. 执行 call 调用
 
 ```solidity
 // system-contracts/contracts/DefaultAccount.sol
@@ -626,7 +632,7 @@ contract DefaultAccount is IAccount {
 2. Paymaster 将资金发送到 `bootloader`
 3. 用户为 paymaster 做 ERC20 approve 操作
 
-> 1)的消耗可以忽略不计，2) 的效果是固定的转账费用，而 3) 当存储槽从零变为一个新的非零值时，是一个相对昂贵的操作。这是因为Ethereum的存储模型对修改空白存储槽和更新已有存储槽的费用是不同的。数据写入成本：首次写入一个存储槽需要消耗大约20000 gas。考虑到L1网络中gas的价格（例如50 gwei），这种操作的成本可以非常高。
+> 1)的消耗可以忽略不计，2) 的效果是固定的转账费用，而 3) 当存储槽从零变为一个新的非零值时，是一个相对昂贵的操作。这是因为 Ethereum 的存储模型对修改空白存储槽和更新已有存储槽的费用是不同的。数据写入成本：首次写入一个存储槽需要消耗大约 20000 gas。考虑到 L1 网络中 gas 的价格（例如 50 gwei），这种操作的成本可以非常高。
 
 如何正确预估一笔使用 paymaster 的 AA 交易费用，对于应用程序来说至关重要。
 
@@ -650,18 +656,18 @@ const gasLimit = await erc20.estimateGas.mint(wallet.address, 5, {
 });
 ```
 
-在 custom-paymaster 中，为了简化示例，我们直接设定每一次调用费用是 1 ERC20，实际情况显然要复杂很多。例如用户的账户上有 100 ERC20 token，希望让paymaster代为支付gas，将所有token转走，费用从 token 数量里扣除。这个时候我们想要预估 `gaslimit` 无疑将陷入鸡生蛋还是蛋生鸡的问题中：我们需要确定的转账数量才能确定 `gaslimit`, 但在确定转账数量之前，我们需要先确定 `gaslimit` ...
+在 custom-paymaster 中，为了简化示例，我们直接设定每一次调用费用是 1 ERC20，实际情况显然要复杂很多。例如用户的账户上有 100 ERC20 token，希望让 paymaster 代为支付 gas，将所有 token 转走，费用从 token 数量里扣除。这个时候我们想要预估 `gaslimit` 无疑将陷入鸡生蛋还是蛋生鸡的问题中：我们需要确定的转账数量才能确定 `gaslimit`, 但在确定转账数量之前，我们需要先确定 `gaslimit` ...
 
 这里有两个建议：
 
-1. 对于一笔交易可以有个粗略的gas费用估计，比如转账操作平均成本在 10 token，但用户想要转出 95 token，显然是不可行的。
+1. 对于一笔交易可以有个粗略的 gas 费用估计，比如转账操作平均成本在 10 token，但用户想要转出 95 token，显然是不可行的。
 2. 先预估不使用 paymaster 完成该操作需要多少费用，然后在其基础上加上一个固定的 paymaster 费用
 
 ## Reference
 
 - [zkSync Era Doc](https://docs.zksync.io/build/developer-reference/account-abstraction.html)
 - [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)
-- [ERC 4337: account abstraction without Ethereum protocol changes](https://medium.com/infinitism)erc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a>
+- [ERC 4337: account abstraction without Ethereum protocol changes](https://medium.com/infinitismerc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a)
 - [DL 分享视频 AA workshop](https://space.bilibili.com/2145417872/channel/collectiondetail?sid=1974263)
 - [Account Abstraction 介紹（一）：以太坊的帳戶現況](https://medium.com/imtoken/account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%B8%80-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E7%9A%84%E5%B8%B3%E6%88%B6%E7%8F%BE%E6%B3%81-6c03c303f229)
 - [Account Abstraction 介紹（二）：以太坊未來的帳戶體驗](https://medium.com/imtoken/account-abstraction-%E4%BB%8B%E7%B4%B9-%E4%BA%8C-%E4%BB%A5%E5%A4%AA%E5%9D%8A%E6%9C%AA%E4%BE%86%E7%9A%84%E5%B8%B3%E6%88%B6%E9%AB%94%E9%A9%97-cca0380d3ba5)

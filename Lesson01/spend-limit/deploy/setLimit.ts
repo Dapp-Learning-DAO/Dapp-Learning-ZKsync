@@ -60,7 +60,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     from: DEPLOYED_ACCOUNT_ADDRESS,
     chainId: (await provider.getNetwork()).chainId,
     nonce: await provider.getTransactionCount(DEPLOYED_ACCOUNT_ADDRESS),
-    type: 113,
+    type: 113, // EIP-712
     customData: {
       gasPerPubdata: utils.DEFAULT_GAS_PER_PUBDATA_LIMIT,
     } as types.Eip712Meta,
