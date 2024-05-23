@@ -164,7 +164,7 @@ Native AA 中的组成:
 | Defined in               | Protocol + contract level | contract level                  | Protocol + contract level |
 | Trigger Verify & Execute | Operator + bootloader     | Bundler → EntryPoint            | Sequencer                 |
 | Determine Tx order       | Sequencer                 | Bundler                         | Sequencer                 |
-| Send Tx before deploy    | no                        | yes, with initCode              | no                        |
+| Send Tx before deploy    | yes, with DefaultAccount  | yes, with initCode              | no                        |
 | Dev. Threshold           | Low (contract)            | Medium (bundler SDK + contract) | Low (contract)            |
 | SHOULD Limit Caller      | only Bootloader           | only EntryPoint                 | only Sequencer            |
 | Validate Function        | validateTransaction       | validateUserOp                  | --                        |
@@ -304,12 +304,12 @@ processTx(txdata...)
         |               |__ callAccountMethod("validateAndPayForPaymasterTransaction")
         |__ l2TxExecution(...)
             |__ l2TxExecution(...)
-                |__ ZKSYNC_NEAR_CALL_executeL2Tx(...)
-                |   |__ executeL2Tx()
-                |       |__ callAccountMethod("executeTransaction")
-                |__ refundCurrentL2Transaction()
-                    |__ ZKSYNC_NEAR_CALL_callPostOp()
-                        |__ call("postTransaction")
+            |   |__ ZKSYNC_NEAR_CALL_executeL2Tx(...)
+            |       |__ executeL2Tx()
+            |           |__ callAccountMethod("executeTransaction")
+            |__ refundCurrentL2Transaction()
+                |__ ZKSYNC_NEAR_CALL_callPostOp()
+                    |__ call("postTransaction")
 
 ```
 
@@ -628,11 +628,11 @@ contract DefaultAccount is IAccount {
 
 虽然 paymaster 为用户支付费用，但与正常交易相比，它也会消耗额外的 Gas，其中包括：
 
-1. 出纳员内部的计算 `validateAndPayForPaymasterTransaction` 以及 `postTransaction` (可以忽略不计)
-2. Paymaster 将资金发送到 `bootloader`
+1. paymaster 内部的计算 `validateAndPayForPaymasterTransaction` 以及 `postTransaction` (可以忽略不计)
+2. Paymaster 将资金发送到 `bootloader` (transfer)
 3. 用户为 paymaster 做 ERC20 approve 操作
 
-> 1)的消耗可以忽略不计，2) 的效果是固定的转账费用，而 3) 当存储槽从零变为一个新的非零值时，是一个相对昂贵的操作。这是因为 Ethereum 的存储模型对修改空白存储槽和更新已有存储槽的费用是不同的。数据写入成本：首次写入一个存储槽需要消耗大约 20000 gas。考虑到 L1 网络中 gas 的价格（例如 50 gwei），这种操作的成本可以非常高。
+> 1)的消耗可以忽略不计，2) 是固定的转账费用，而 3) 当存储槽从零变为一个新的非零值时，是一个相对昂贵的操作。这是因为 Ethereum 的存储模型对修改空白存储槽和更新已有存储槽的费用是不同的。数据写入成本：首次写入一个存储槽需要消耗大约 20000 gas。考虑到 L1 网络中 gas 的价格（例如 50 gwei），这种操作的成本可以非常高。
 
 如何正确预估一笔使用 paymaster 的 AA 交易费用，对于应用程序来说至关重要。
 
