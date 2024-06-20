@@ -24,12 +24,16 @@
 - **入门示例**: 在 zkSync Era 网络上部署 ERC20, ERC721 合约并交互.
 - **Native AA**: 在 zkSync Era 网络上部署 Native AA 示例 (spend-limit)，并交互.
 
+[video p1](https://www.youtube.com/watch?v=vWIEDMvpqFE&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=4) | [video p2](https://www.youtube.com/watch?v=b9cToAol3cg&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=3) | [Doc](./Lesson01/README.md)
+
 ### Lesson 2: zkSync Era 抽象账户
 
 - **EIP-4337 概述**: 介绍 EIP-4337 及其工作原理。
 - **zkSync Era 中的 AA 机制**: 介绍 zkSync Era 中的账户抽象（AA）机制，详细说明其操作原理和工作流程.
 - **原生 AA 与 EIP-4337 的比较**: 比较 zkSync Era 中原生 AA 与 EIP-4337 的差异.
 - **费用模型与Paymaster**: 介绍 zkSync Era 中账户抽象的费用模型以及Paymaster.
+
+[video](https://www.youtube.com/watch?v=gGTnBRnSFh8&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=2) | [Doc](./Lesson02/README.md)
 
 ### Lesson 3: zkSync 系统特性详解
 
@@ -50,8 +54,11 @@
 
 ### Lesson 6: Rollups 原理和 zkSync Era（选修）
 
-- **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。.
-- **Boojum**: Boojum的技术原理
+- **Boojum**: Boojum 原理 电路算术化
+  - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
+- **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。
+
+
 
 ## **Course Overview**
 
@@ -67,12 +74,16 @@
 - **Simple Example**: Deploying and interacting with ERC20, ERC721 contracts on the zkSync Era network.
 - **Native AA**: Deploying and interacting with a simple AA contract (spend-limit).
 
+[video p1](https://www.youtube.com/watch?v=vWIEDMvpqFE&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=4) | [video p2](https://www.youtube.com/watch?v=b9cToAol3cg&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=3) | [Doc](./Lesson01/README.md)
+
 ### Lesson 2: zkSync Era Account Abstraction
 
 - **EIP 4337 overview**: An overview of EIP 4337 and how it works.
 - **AA Mechanism in zkSync Era**: Introduce the Account Abstraction (AA) mechanism in zkSync Era, detailing its operating principles and workflow.
 - **Native AA vs EIP 4337**: Compare the differences between native AA in zkSync Era,
 - **Fee Model and Paymaster**: Introduce the Fee Model for Account Abstraction in zkSync Era and the role of Paymasters.
+
+[video](https://www.youtube.com/watch?v=gGTnBRnSFh8&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=2) | [Doc](./Lesson02/README.md)
 
 ### Lesson 3: zkSync System Features
 
@@ -93,8 +104,9 @@
 
 ### Lesson 6: Principles of Rollups and zkSync Era (Optional)
 
+- **Boojum**: Technical principles of Boojum, Circuit Arithmetization
+  - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
 - **Plonk and Plonky2**: Technical principles of Plonk and Plonky2 technology.
-- **Boojum**: Technical principles of Boojum
 
 ## Reference
 
