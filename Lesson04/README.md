@@ -1,14 +1,14 @@
 # Lesson 4: DApp Development 1
 
-> How to deploy Uniswap V3 on zkSync Era (front-end + contracts)
+> How to deploy Uniswap V3 on ZKsync Era (front-end + contracts)
 
-本次课程我们将尝试在 zkSync Era Sepolia Testnet 上部署一套 UniswapV3 合约，以及搭建一个适配的前端项目。
+本次课程我们将尝试在 ZKsync Era Sepolia Testnet 上部署一套 UniswapV3 合约，以及搭建一个适配的前端项目。
 
-> 本文档出于教学目的，所使用的代码为较老版本，请勿将其用于生产 (Uniswap 官方已在 6 月中旬支持了 zkSync Era 网络)
+> 本文档出于教学目的，所使用的代码为较老版本，请勿将其用于生产 (Uniswap 官方已在 6 月中旬支持了 ZKsync Era 网络)
 
 ## era-uniswap-deploy-v3
 
-[era-uniswap-deploy-v3](https://github.com/uniswap-zksync/era-uniswap-deploy-v3) 是 [uniswap deploy-v3](https://github.com/Uniswap/deploy-v3) 的 fork 仓库，主要针对 zkSync Era 网络进行了适配修改。
+[era-uniswap-deploy-v3](https://github.com/uniswap-zksync/era-uniswap-deploy-v3) 是 [uniswap deploy-v3](https://github.com/Uniswap/deploy-v3) 的 fork 仓库，主要针对 ZKsync Era 网络进行了适配修改。
 
 由于 Uniswap V3 的合约分为好几个部分，例如 v3-core, v3-periphery, 且彼此之间有着依赖关系，所以为了便于统一部署以及管理，Uniswap 专门创建了 `deploy-v3` 仓库，实现了脚本一键自动部署。
 
@@ -33,15 +33,15 @@
 13. 部署 `QuoterV2`, 将 1 `_factory` 以及 WETH 地址 作为初始化参数
 14. 部署 `SwapRouter`, 将 1 `_factory` 以及 WETH 地址 作为初始化参数
 
-era-uniswap-deploy-v3 在原仓库的基础之上，加入了 zkSync Era 的相关适配：
+era-uniswap-deploy-v3 在原仓库的基础之上，加入了 ZKsync Era 的相关适配：
 
 - 安装 `hardhat-zksync` 相关插件
-- `hardhat.config.ts` 中增加 zkSync Era 网络配置，和 zksolc 配置
+- `hardhat.config.ts` 中增加 ZKsync Era 网络配置，和 zksolc 配置
 
   ```ts
   networks: {
-    zkSyncSepoliaTestnet: {
-      url: "https://sepolia.era.zksync.dev", // The testnet RPC URL of zkSync Era network.
+    ZKsyncSepoliaTestnet: {
+      url: "https://sepolia.era.zksync.dev", // The testnet RPC URL of ZKsync Era network.
       ethNetwork: "sepolia", // The Ethereum Web3 RPC URL, or the identifier of the network (e.g. `mainnet` or `sepolia`)
       zksync: true,
       // Verification endpoint for Sepolia
@@ -90,9 +90,9 @@ era-uniswap-deploy-v3 在原仓库的基础之上，加入了 zkSync Era 的相�
 
 ### run deploy
 
-运行下列命令，替换相关变量数值，脚本将自动部署一整套合约到 zkSync Era Sepolia Testnet 上，并将部署合约的地址存入 `state.json` 文件。
+运行下列命令，替换相关变量数值，脚本将自动部署一整套合约到 ZKsync Era Sepolia Testnet 上，并将部署合约的地址存入 `state.json` 文件。
 
-> 在 zkSync Era sepolia 网络中没有官方提供的 WETH 合约，所以我们需要自己部署一个 WETH9，或者你也可以直接使用我部署的 WETH9 合约，地址是 `0x528499043839E2021Acce95fdf7C438692dc3c04`
+> 在 ZKsync Era sepolia 网络中没有官方提供的 WETH 合约，所以我们需要自己部署一个 WETH9，或者你也可以直接使用我部署的 WETH9 合约，地址是 `0x528499043839E2021Acce95fdf7C438692dc3c04`
 
 ```sh
 yarn start --json-rpc https://sepolia.era.zksync.dev --native-currency-label ETH --owner-address ${WALLET_ADDRESS} --private-key ${WALLET_PRIVATE_KEY} --weth9-address ${WETH9_ADDRESS}
@@ -262,14 +262,14 @@ Final state
 主要在以下方面修改：
 
 - 安装 `zksync-ethers`，修改最低 node 版本为 16 (原版 14)
-- 增加 `zkSync` 相关的网络配置，删除 rinkby, kovan, geoli 等已经废弃的测试网络
-- 增加 zkSync Sepolia 网络上部署的 Uniswap V3 合约地址
-- 增加 zkSync Sepolia 网络上的一些测试 token 的配置
+- 增加 `ZKsync` 相关的网络配置，删除 rinkby, kovan, geoli 等已经废弃的测试网络
+- 增加 ZKsync Sepolia 网络上部署的 Uniswap V3 合约地址
+- 增加 ZKsync Sepolia 网络上的一些测试 token 的配置
   - 如果你不想自己部署测试用的 ERC20 token，可以直接用着两个 test token，他们都有无限制的 mint 函数，在区块浏览器直接 mint 即可
   - [DLD](https://sepolia.explorer.zksync.io/address/0x264d10475eF47cFABdD3A0592d285ac612A4586D)
   - [DLZT](https://sepolia.explorer.zksync.io/address/0x0581364e148898c641D7741094bC9123F5Cb959F)
 - 由于我们并未部署后端路由服务，所以要关闭相应的设置
-- `src/hooks/useClientSideV3Trade.ts` 在 zkSync 网络上使用 `QuoterV2`, 因为我们并未部署 `QuoterV1`
+- `src/hooks/useClientSideV3Trade.ts` 在 ZKsync 网络上使用 `QuoterV2`, 因为我们并未部署 `QuoterV1`
 
   ```ts
   // src/hooks/useClientSideV3Trade.ts

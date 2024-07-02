@@ -1,4 +1,4 @@
-# zkSync Era Account Abstraction
+# ZKsync Era Account Abstraction
 
 ## EIP-4337
 
@@ -105,9 +105,9 @@ Paymaster 需要验证两个条件：
 6. `EntryPoint` 调用 Paymaster 的 `postOp` 函数（该函数由 Paymaster 自定义，通常用户更新状态，广播 event 等等）
 7. refund paymster 退还 Paymaster 多余的费用
 
-## AA Mechanism in zkSync Era
+## AA Mechanism in ZKsync Era
 
-zkSync Era 上的账户抽象协议 (以下简称 Native AA) 与 EIP-4337 非常相似，但将一部分功能集成到系统中，优化用户体验和效率。
+ZKsync Era 上的账户抽象协议 (以下简称 Native AA) 与 EIP-4337 非常相似，但将一部分功能集成到系统中，优化用户体验和效率。
 
 Native AA 中的组成:
 
@@ -123,7 +123,7 @@ Native AA 中的组成:
   - `postTransaction` 可选实现，在操作交易完成后 `bootloader` 会调用此方法
 - `AAFactory`: 可选实现，用于创建自定义 AA 钱包 的工厂合约；
 
-> **在 zkSync 上，每个地址都是一个合约**。用户可以从他们的 EOA 账户开始交易，因为每个没有部署任何合约的地址都**隐式包含 DefaultAccount.sol(系统合约)** 中定义的代码。每当有人调用不在 `kernel space` (内核空间 即地址 ≥2^16) 且没有部署任何合约代码的合约时， 的代码 DefaultAccount 将被用作合约的代码。
+> **在 ZKsync 上，每个地址都是一个合约**。用户可以从他们的 EOA 账户开始交易，因为每个没有部署任何合约的地址都**隐式包含 DefaultAccount.sol(系统合约)** 中定义的代码。每当有人调用不在 `kernel space` (内核空间 即地址 ≥2^16) 且没有部署任何合约代码的合约时， 的代码 DefaultAccount 将被用作合约的代码。
 
 ### Native AA transaction flow
 
@@ -157,9 +157,9 @@ Native AA 中的组成:
 6. `BootLoader` 调用 `AAccount.executeTransaction` 执行操作
 7. 如果使用了 Paymaster 支付费用，操作执行成功后 `BootLoader` 调用 `Paymaster.postTransaction` 函数
 
-### zkSync Native AA vs EIP-4337
+### ZKsync Native AA vs EIP-4337
 
-| Comparison               | zkSync Native AA          | EIP-4337                        | Starknet                  |
+| Comparison               | ZKsync Native AA          | EIP-4337                        | Starknet                  |
 | ------------------------ | ------------------------- | ------------------------------- | ------------------------- |
 | Defined in               | Protocol + contract level | contract level                  | Protocol + contract level |
 | Trigger Verify & Execute | Operator + bootloader     | Bundler → EntryPoint            | Sequencer                 |
@@ -178,7 +178,7 @@ Native AA 中的组成:
 - `callGasLimit` 执行操作所需的 gas 费用限制
 - `preVerificationGas` 额外向 Bundler 支付的 gas 费用
 
-而在 zkSync Era Native AA 只有一个字段 ，`gasLimit` 涵盖了所有三个字段的费用。提交交易时，请确保 gasLimit 足以支付验证、支付费用（上面提到的 ERC20 转账）以及实际执行本身。
+而在 ZKsync Era Native AA 只有一个字段 ，`gasLimit` 涵盖了所有三个字段的费用。提交交易时，请确保 gasLimit 足以支付验证、支付费用（上面提到的 ERC20 转账）以及实际执行本身。
 
 #### Built-in paymaster flows
 
@@ -206,7 +206,7 @@ function approvalBased(
 
 接下来我们将以 [custom-paymaster](../Lesson01/custom-paymaster/) 为例，深入探究在 Native AA 调用过程中，究竟发生了什么，Paymaster 合约 和 zksync Era 系统合约将如何参与整个过程。
 
-假设我们有一个 zkSync Era EOA 账户，因为缺少作为 gas 费用的 ETH，所以使用一个 custom-paymaster 合约代替我们支付 gas。
+假设我们有一个 ZKsync Era EOA 账户，因为缺少作为 gas 费用的 ETH，所以使用一个 custom-paymaster 合约代替我们支付 gas。
 
 ### step 0
 
@@ -665,7 +665,7 @@ const gasLimit = await erc20.estimateGas.mint(wallet.address, 5, {
 
 ## Reference
 
-- [zkSync Era Doc](https://docs.zksync.io/build/developer-reference/account-abstraction.html)
+- [ZKsync Era Doc](https://docs.zksync.io/build/developer-reference/account-abstraction.html)
 - [ERC-4337](https://eips.ethereum.org/EIPS/eip-4337)
 - [ERC 4337: account abstraction without Ethereum protocol changes](https://medium.com/infinitismerc-4337-account-abstraction-without-ethereum-protocol-changes-d75c9d94dc4a)
 - [DL 分享视频 AA workshop](https://space.bilibili.com/2145417872/channel/collectiondetail?sid=1974263)
