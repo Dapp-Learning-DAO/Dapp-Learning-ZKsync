@@ -1,4 +1,4 @@
-# Lesson 4: DApp Development 1
+# Lesson 4: Deploying Uniswap V3 on ZKsync Era
 
 > How to deploy Uniswap V3 on ZKsync Era (front-end + contracts)
 
