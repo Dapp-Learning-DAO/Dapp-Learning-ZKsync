@@ -515,7 +515,7 @@ function computePoolAddress() {
 
 ### swap flow
 
-![uniswap-v3-swap.drawio](./docs/img/uniswap-v3-add-liquidity.svg)
+![uniswap-v3-swap.drawio](./docs/img/uniswap-v3-swap.svg)
 
 - `useSwapState` hook 函数处理用户的输入 `independentField`,`typedValue`,`recipient`
 - `useDerivedSwapInfo` hook 函数根据用户的输入参数，请求链上数据和计算处理
