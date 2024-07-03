@@ -16,7 +16,7 @@
 
 主要实现思路是将整个部署流程编写为 hardhat task 的形式 (`deploy-v3`)，将每个部署的步骤拆分为单独的文件，实现灵活的操作配置。脚本没有使用 hardhat 的部署插件，而是自己实现的逻辑。
 
-![uniswap-deploy-v3.drawio](./docs/uniswap-deploy-v3.drawio.svg)
+![uniswap-deploy-v3.drawio](./docs/img/uniswap-deploy-v3.drawio.svg)
 
 1. 部署 `UniswapV3Factory` 合约，传入 `WETH` 合约地址
 2. 增加 0.01% 费率档位（默认只有 1%, 0.3%, 0.05% 的费率档位）
@@ -329,6 +329,210 @@ Final state
   ```
 
 详细的代码修改查看这里 [Comparing changes](https://github.com/Uniswap/interface/compare/v4.160.0...0x-stan:uniswap-zksync-interface:zksync)
+
+接下来我们看看 interface 的业务流程，以 `addLiquidity` 和 `swap` 为例
+
+### add liquidity flow
+
+![uniswap-v3-add-liquidity.drawio](./docs/img/uniswap-v3-add-liquidity.svg)
+
+分为 3 个角色
+
+- `LP provider` (也就是用户)
+- `Web Client` (即 interface)
+- `SmartContract`
+
+当用户使用 interface 添加流动性，流程大致如下：
+
+- 判断 position 是否已存在，通常根据 url 中的参数判断，如果用户追加流动性，url 参数中会传入 position NFT 的 tokenId
+
+  ```ts
+  // src/pages/AddLiquidity/index.tsx
+  const {
+    currencyIdA,
+    currencyIdB,
+    feeAmount: feeAmountFromUrl,
+    tokenId,
+  } = useParams<{
+    currencyIdA?: string;
+    currencyIdB?: string;
+    feeAmount?: string;
+    tokenId?: string;
+  }>();
+  ```
+
+- 如果 position 已存在，通过 `useV3useV3PositionFromTokenId` hook 函数，向 Manager 合约请求 position 相关信息；如果不存在，这里将 `undefined` 传递给下一个函数
+
+  ```ts
+  // check for existing position if tokenId in url
+  // call NonfungiblePositionManager contract `positions(uint256 tokenId)`
+  const { position: existingPositionDetails, loading: positionLoading } =
+    useV3PositionFromTokenId(tokenId ? BigNumber.from(tokenId) : undefined);
+  ```
+
+- `useDerivedPositionInfo` hook 函数根据上一步传入的信息，返回 `class Position` (`@uniswap/v3-sdk`); 如果上一步传入 undefinded， 则返回 undefined
+
+- `useV3DerivedMintInfo` hook 函数会处理很多核心逻辑，根据用户的输入，准备调用交易的calldata
+  - 处理用户的输入 (position的相关参数)
+
+    ```ts
+    // src/state/mint/v3/hooks.tsx
+    const { independentField, typedValue, leftRangeTypedValue, rightRangeTypedValue, startPriceTypedValue } =
+    useV3MintState()
+    ```
+
+  - `useCurrencyBalances` hook 函数会请求相应的 ERC20 合约 `balanceOf` 接口，查看用户的 token 余额
+  - `usePool` hook 函数，会计算 pool address，并向链上请求数据，并包装成 `class Pool` (`@uniswap/v3-sdk`) 对象返回给我们
+    - `PoolCache.getPoolAddress` 根据配置的两个 token 的address，依据 create2 机制计算 pool address，具体原理参考 [#getPoolAddress](#getPoolAddress)
+    - 如果 Pool 已存在，向 `UniswapV3Pool` 合约请求 `slot0()` 和 `liquidity()` 接口，前者包含当前价格和tick等信息，后者是公式中的 `L`;
+    - 根据请求得到的信息，包装 `class Pool` (`@uniswap/v3-sdk`)， 如果 Pool 还未创建，则返回 null
+  - 如果 Pool 合约还未创建，生成 MockPool 对象，此时需要用户输入 `init price`
+  - 根据用户输入的价格区间 (`leftRangeTypedValue`, `rightRangeTypedValue`)，生成 ticks 对象 ( lower 和 upper 的tick index)
+  - 根据用户输入的token数量 `independentAmount`，计算另一个token所需要的数量 `dependentAmount`;
+    - 这里使用的是 `@uniswap/v3-sdk` 的 `Position.fromAmount0() / Position.fromAmount1()`
+    - 原理可以参考这篇文章 [Uniswap v3 详解（二）：创建交易对/提供流动性](https://paco0x.org/uniswap-v3-2)
+
+    ```ts
+    const dependentAmount: CurrencyAmount<Currency> | undefined = useMemo(() => {
+      ...
+
+      const position: Position | undefined = wrappedIndependentAmount.currency.equals(poolForPosition.token0)
+        ? Position.fromAmount0({
+            pool: poolForPosition,
+            tickLower,
+            tickUpper,
+            amount0: independentAmount.quotient,
+            useFullPrecision: true, // we want full precision for the theoretical position
+          })
+        : Position.fromAmount1({
+            pool: poolForPosition,
+            tickLower,
+            tickUpper,
+            amount1: independentAmount.quotient,
+          })
+
+      const dependentTokenAmount = wrappedIndependentAmount.currency.equals(poolForPosition.token0)
+        ? position.amount1
+        : position.amount0
+      return dependentCurrency && CurrencyAmount.fromRawAmount(dependentCurrency, dependentTokenAmount.quotient)
+    }, [
+      independentAmount,
+      outOfRange,
+      dependentField,
+      currencyB,
+      currencyA,
+      tickLower,
+      tickUpper,
+      poolForPosition,
+      invalidRange,
+    ])
+    ```
+
+  - 最终 `useV3DerivedMintInfo` hook 将结合合约返回和用户输入，计算出所有发送交易所需的字段
+
+- 在用户点击 Add 按钮时，`onAdd` 函数会生成 calldata，并发送交易
+  - 根据 Position 是否存在，将调用 Manager 合约的不同函数 `mint()` 或者 `increaseLiquidity()`，两者所需的参数不同，所以需要分情况对待
+  - 生成calldata， 发送交易
+
+#### getPoolAddress
+
+Uniswap 使用了 create2 机制来创建 Pool 合约，所以在 Pool 创建之前，我们可以在链下提前计算好 Pool Address。
+
+主网的 create2 的计算机制如下：
+
+- `keccak256(concat([ "0xff", from, salt, initCodeHash ]))`
+
+而 ZKsync Era create2 的计算规则有一点区别
+
+- `keccak256(concat([ keccak256("zksyncCreate2"), from, salt, initCodeHash ]))`
+
+另外需要注意的是 salt 的计算要跟 factory 合约保持一致
+
+- `keccak256(concat([token0.address, token1.address, fee]))`
+
+```ts
+// src/hooks/usePools.ts
+static getPoolAddress(chainId: number, factoryAddress: string, tokenA: Token, tokenB: Token, fee: FeeAmount): string {
+  ...
+  const address = {
+    key,
+    address: isZksyncChainId(chainId)
+      ? computePoolAddressZksync({
+          factoryAddress,
+          tokenA,
+          tokenB,
+          fee,
+        })
+      : computePoolAddress({
+          factoryAddress,
+          tokenA,
+          tokenB,
+          fee,
+        }),
+  }
+  this.addresses.unshift(address)
+  return address.address
+}
+
+function computePoolAddressZksync({
+  factoryAddress,
+  tokenA,
+  tokenB,
+  fee,
+}: {
+  factoryAddress: string
+  tokenA: Token
+  tokenB: Token
+  fee: FeeAmount
+}): string {
+  const [token0, token1] = tokenA.sortsBefore(tokenB) ? [tokenA, tokenB] : [tokenB, tokenA] // does safety checks
+  const salt = keccak256(
+    ['bytes'],
+    [defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, fee])]
+  )
+  const prefix = keccak256(['bytes'], [toUtf8Bytes('zksyncCreate2')])
+  const addressBytes = keccak256(
+    ['bytes'],
+    [concat([prefix, zeroPad(factoryAddress, 32), salt, POOL_INIT_CODE_HASH_ZKSYNC, CONSTRUCTOR_INPUT_HASH])]
+  ).slice(26)
+  return getAddress(addressBytes)
+}
+
+// v3-sdk/src/utils/computePoolAddress.ts
+import { getCreate2Address } from '@ethersproject/address'
+function computePoolAddress() {
+  ...
+  return getCreate2Address(
+    factoryAddress,
+    keccak256(
+      ['bytes'],
+      [defaultAbiCoder.encode(['address', 'address', 'uint24'], [token0.address, token1.address, fee])]
+    ),
+    initCodeHashManualOverride ?? POOL_INIT_CODE_HASH
+  )
+}
+```
+
+### swap flow
+
+![uniswap-v3-swap.drawio](./docs/img/uniswap-v3-add-liquidity.svg)
+
+- `useSwapState` hook 函数处理用户的输入 `independentField`,`typedValue`,`recipient`
+- `useDerivedSwapInfo` hook 函数根据用户的输入参数，请求链上数据和计算处理
+  - `useENS` hook 函数会请求 `ENS Registry / Resolver` 合约，处理 recipient (如果输入是 ens)
+  - `useCurrencyBalances` hook 函数会请求相关 ERC20 合约，查询余额
+  - `isExactIn` 根据用户输入的行为判断是置顶 amountIn 还是 amountOut
+  - `allowedSlippage` 根据用户输入的最大滑点限制生成，一般使用默认值
+  - `useBestTrade` hook 函数返回最佳的交易路径，通过后端api接口和 SwapRouter 合约请求结果综合判断
+    - `useRoutingAPITrade` hook 请求后端服务接口返回最佳交易路径；由于我们并没有部署相关后端服务，所以这里不会有返回结果
+    - `useClientSideV3Trade` hook 先计算所有可用的 Pool，生成相应的calldata，然后调用 QuoteV2 合约预估交易的结果，最终筛选出最优的交易路径
+      - `useAllV3Routes` hook 根据 tokenA, tokenB 的地址以及所有可选的 fee ，列出所有 Pool Address，并检查是否有流动性，返回所有可用的 Pool
+      - 生成对应的calldata，请求 `QuoteV2` 合约，预估交易结果 `quotesResults`； Quote 合约是用于预估交易结果的合约，并不会执行交易；
+      - 根据预估结果，筛选出最优的交易路径，即 滑点+手续费 最少
+- approve 阶段，分为两种方式
+  - `useERC20PermitFromTrade` hook 函数生成授权approve的签名，如果 Token 合约支持 EIP2612 标准，默认使用该方法
+  - 如果 Token 不支持 EIP2612， 则需要单独发起 approve 交易，授权
+- 根据最优交易路径的calldata发起swap交易，调用 `SwapRouter` 的 `exactInput()` 或 `exactOutput()` 函数
 
 ## Reference
 
