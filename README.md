@@ -10,8 +10,6 @@
   </p>
 </div>
 
-![poster](./Lesson01/docs/img/zksync-tutorial-poster.png)
-
 ## 课程概览
 
 - **课程形式**: 视频直播课程 + 代码示例 + 线上workshop
@@ -109,6 +107,8 @@
 - **Boojum**: Technical principles of Boojum, Circuit Arithmetization
   - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
 - **Plonk and Plonky2**: Technical principles of Plonk and Plonky2 technology.
+
+![poster](./Lesson01/docs/img/zksync-tutorial-poster.png)
 
 ## Reference
 
