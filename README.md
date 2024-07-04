@@ -10,6 +10,8 @@
   </p>
 </div>
 
+![poster](./Lesson01/docs/img/zksync-tutorial-poster.png)
+
 ## 课程概览
 
 - **课程形式**: 视频直播课程 + 代码示例 + 线上workshop
