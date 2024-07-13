@@ -1,6 +1,6 @@
-# Lesson 1: Quick Introduction to zkSync Development
+# Lesson 1: Quick Introduction to ZKsync Development
 
-## Quick Introduction to zkSync Development and Native AA
+## Quick Introduction to ZKsync Development and Native AA
 
 ### Prerequisites
 
@@ -12,7 +12,7 @@
 
 - [Block Explorer](./docs/Tooling.md#block-explorer)
 - [zksync-cli](./docs/Tooling.md#zksync-cli)
-- [Foundry with zkSync](./docs/Tooling.md#foundry-with-zksync)
+- [Foundry with ZKsync](./docs/Tooling.md#foundry-with-zksync)
 - [hardhat-zksync-toolbox](./docs/Tooling.md#hardhat-zksync-toolbox)
   - hardhat-zksync-solc
   - hardhat-zksync-deploy
@@ -92,9 +92,9 @@ tree -I 'node_modules'
 查看 `hardhat.config.ts` 的配置，主要有三个需要注意的地方：
 
 - 在刚才通过模板创建的项目中，已经预先配置了 zksync Era 主网，测试网，以及本地测试网
-  - `zkSyncMainnet` 主网
-  - `zkSyncSepoliaTestnet` zksync sepolia 测试网
-  - `zkSyncGoerliTestnet` zksync goerli 测试网 ([zksync goerli 网络即将关闭](https://github.com/zkSync-Community-Hub/zksync-developers/discussions/228)，不建议使用)
+  - `ZKsyncMainnet` 主网
+  - `ZKsyncSepoliaTestnet` zksync sepolia 测试网
+  - `ZKsyncGoerliTestnet` zksync goerli 测试网 ([zksync goerli 网络即将关闭](https://github.com/zkSync-Community-Hub/zksync-developers/discussions/228)，不建议使用)
   - `dockerizedNode` docker 本地 Node 网络
   - `inMemoryNode` 本地测试网络
   - `hardhat` hardhat zksync 本地测试网络
@@ -218,7 +218,7 @@ const config: HardhatUserConfig = {
 contract MyERC20Token is ERC20Burnable {
     ...
 
-    constructor() ERC20("DappLearning zkSync Tutorail", "DLZT") {
+    constructor() ERC20("DappLearning ZKsync Tutorail", "DLZT") {
         // Default initial supply of 1 million tokens (with 18 decimals)
         uint256 initialSupply = 1_000_000 * (10 ** 18);
 
@@ -506,10 +506,10 @@ Estimated deployment cost: 0.0032464766 ETH
 
 Requesting contract verification...
 Your verification ID is: 8522
-Contract successfully verified on zkSync block explorer!
+Contract successfully verified on ZKsync block explorer!
 ```
 
-- 在 zkSync Era scan 网站查看部署合约 [0x0581364e148898c641D7741094bC9123F5Cb959F](https://sepolia.explorer.zksync.io/address/0x0581364e148898c641D7741094bC9123F5Cb959F) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
+- 在 ZKsync Era scan 网站查看部署合约 [0x0581364e148898c641D7741094bC9123F5Cb959F](https://sepolia.explorer.zksync.io/address/0x0581364e148898c641D7741094bC9123F5Cb959F) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
 
 ![Lesson01_03.png](./docs/img/Lesson01_03.png)
 
@@ -531,7 +531,7 @@ Your verification ID is: 8523
 Contract successfully verified on zkSync block explorer!
 ```
 
-- 在 zkSync Era scan 网站查看部署合约 [0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778](https://sepolia.explorer.zksync.io/address/0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
+- 在 ZKsync Era scan 网站查看部署合约 [0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778](https://sepolia.explorer.zksync.io/address/0xa4B9C41D5a464be28d0C1D181c132f2D39E8E778) , 可以看到我们的合约已经部署成功，且完成了代码开源认证
 
 ![Lesson01_04.png](./docs/img/Lesson01_04.png)
 
