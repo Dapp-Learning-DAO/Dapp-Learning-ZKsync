@@ -242,10 +242,6 @@ b_i & = \frac{m_i}{\beta + t_{0,i} + \gamma\cdot t_{1,i} + \gamma^2 \cdot t_{2, 
 \end{split}
 `$
 
-
-
-
-
 第五步：Verifier 发送 $\alpha$
 
 第六步：Prover 计算 $h(X)$，并发送 $M(\vec{h})$
