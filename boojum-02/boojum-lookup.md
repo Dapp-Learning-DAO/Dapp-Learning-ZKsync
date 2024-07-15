@@ -64,7 +64,7 @@ $$
 
 其中 $m_j$ 是表格第 $j$ 项总共被查询了 $m_j$ 次。因此，当我们把所有的查询记录加在一起之后，得到等式左边的分式求和，而等式右边则是所有表项，乘以它被查询的次数。如果一个表项没有被查询到，那么 $m_j=0$ 很显然，如果每一条查询都在表中的话，等式两边相等。
 
-再看下上面的例子， $\vec{t}=\{10,11,12,13\}$，$\vec{f}=\{12,12,11,13\}$，我们有
+再看下上面的例子， $\vec{t}=\{10,11,12,13\}$， $\vec{f}=\{12,12,11,13\}$，我们有
 
 $$
 \frac{1}{X-12}+\frac{1}{X-12}+\frac{1}{X-11}+\frac{1}{X-13} = \frac{0}{X-10}+\frac{1}{X-11}+\frac{2}{X-12}+\frac{1}{X-13}
@@ -74,7 +74,7 @@ $$
 
 接下来的问题是，Prover 如何证明上面的关于有理分式的等式呢？注意到等式左右两边都不是多项式，而是有理分式。
 为了解决这个问题，
-我们需要引入两个长度为 $n$ 的辅助向量，$\vec{a}$ 与 $\vec{b}$，其中向量元素的定义如下：
+我们需要引入两个长度为 $n$ 的辅助向量， $\vec{a}$ 与 $\vec{b}$，其中向量元素的定义如下：
 
 $$
 \begin{split}
@@ -95,7 +95,7 @@ $$
 \sum_{X\in H} a(X) = \sum_{X\in H} b(X)
 $$
 
-其中 $a(X)=\sum_{i=0}^{n-1}a_i\cdot L_i(X)$，$b(X)=\sum_{j=0}^{n-1}b_j\cdot L_j(X)$，这里的 $L_i(X)$ 是 domain $H$ 上的 Lagrange 插值多项式。
+其中 $a(X)=\sum_{i=0}^{n-1}a_i\cdot L_i(X)$， $b(X)=\sum_{j=0}^{n-1}b_j\cdot L_j(X)$，这里的 $L_i(X)$ 是 domain $H$ 上的 Lagrange 插值多项式。
 
 
 除此之外，Prover 还需要证明 $a(X)$ 与 $b(X)$ 的正确性，即它们在 domain $H$ 上的取值满足 $\vec{a}$ 与 $\vec{b}$ 的定义。换句话说，它们需要满足下面的两个约束等式：
@@ -117,12 +117,12 @@ $$
 
 ## Univariate Sumcheck 证明
 
-为了证明 lookup 中 $a(x)$、$b(x)$ 在 Domain $H$ 上的值的求和相等， boojum 使用了 Univariate Sumcheck Argument。
+为了证明 lookup 中 $a(x)$、 $b(x)$ 在 Domain $H$ 上的值的求和相等， boojum 使用了 Univariate Sumcheck Argument。
 
 所谓 Univariate Sumcheck 是指，对任意的多项式 $f(X)\in\mathbb{F}[X]$，如果存在一个 FFT 平滑的乘法子群 $\mathbb{H}\subset\mathbb{F}_p^*$，并且 $|\mathbb{H}|=n，$那么下面的等式成立：
 
 $$
-f(X) = \frac{\sigma}{n} + X\cdot g(X) + z_\mathbb{H}(X)\cdot q(X), \qquad \deg(r(X))<n-1
+f(X) = \frac{\sigma}{n} + X\cdot g(X) + z_\mathbb{H}(X)\cdot q(X), \qquad \deg(r(X)) < n-1
 $$
 
 其中 $\sigma$ 为多项式在 $\mathbb{H}$ 上的运算求值之和，即
@@ -131,7 +131,7 @@ $$
 \sigma = \sum_{i=0}^{n-1}f(\omega^i) 
 $$
 
-在 Boojum 中，$a(X)$ 和 $b(X)$ 的 degree 也不会超过 $n-1$，因此上面的 Univariate Sumcheck 等式还可以继续简化为：
+在 Boojum 中， $a(X)$ 和 $b(X)$ 的 degree 也不会超过 $n-1$，因此上面的 Univariate Sumcheck 等式还可以继续简化为：
 
 $$
 f(X) = \frac{\sigma}{n} + X\cdot g(X)
@@ -166,6 +166,7 @@ $$
 $$
 
 现在观察下 $f(X)$ 在 $H$ 上的求和，假设 $(f_0, f_1,\ldots, f_{n-1})$ 为多项式的系数：
+
 $$
 \begin{split}
 \sigma &= \sum_{i=0}^{n-1} f(\omega^i)  \\
@@ -185,38 +186,38 @@ $$
 
 利用 Logarithmic Derivative 的方法，我们支持超出 Trace 长度的查询数量。在 Boojum 中，我们可以支持  $k\cdot n$ 个查询，即 $k$ 列查询，但是只需要单个 $\vec{m}$ 向量。
 
-那么我们更新下协议：现在有 $k$ 个查询向量 $(\vec{f}^{(0)}, \vec{f}^{(1)}, \ldots, \vec{f}^{(k-1)})$，$\vec{m}$ 向量仍然为表项的被查询次数，$\vec{t}$ 为表格向量。那么我们可以得到下面的等式：
+那么我们更新下协议：现在有 $k$ 个查询向量 $(\vec{f}^{(0)}, \vec{f}^{(1)}, \ldots, \vec{f}^{(k-1)})$， $\vec{m}$ 向量仍然为表项的被查询次数， $\vec{t}$ 为表格向量。那么我们可以得到下面的等式：
 
-$$
-\sum_{l=0}^{k-1}\Big(\sum_{i=0}^{n-1}\frac{1}{X-f^{(l)}_i}\Big) = \sum_{j=0}^{n-1}\frac{m_j}{X-t_j}
-$$
+```math
+\sum_{l=0}^{k-1} \Big(\sum_{i=0}^{n-1}\frac{1}{X-f^{(l)}_i}\Big) = \sum_{j=0}^{n-1}\frac{m_j}{X-t_j}
+```
 
-相应地，我们需要引入 $k+1$ 个 辅助向量，$(\vec{a}^{(0)},\vec{a}^{(1)},\ldots, \vec{a}^{(k-1)})$ 与 $\vec{b}$。
+相应地，我们需要引入 $k+1$ 个 辅助向量， $(\vec{a}^{(0)},\vec{a}^{(1)},\ldots, \vec{a}^{(k-1)})$ 与 $\vec{b}$。
 
 ## 多列表格的扩展
 
 采用 Logarithmic Derivative 方案的另一个好处是，可以轻松实现多列表格的查询。假如有一个表格有 $c$ 列：
 
-$$
-\vec{t}=(\vec{t}_0, \vec{t}_1,\ldots, \vec{t}_{c-1})
-$$
+```math
+\vec{t} = (\vec{t}_0, \vec{t}_1,\ldots, \vec{t}_{c-1})
+```
 
 因而相应的查询也为 $c$ 列：
 
-$$
+```math
 \vec{f}^{(i)} = (\vec{f}^{(i)}_0, \vec{f}^{(i)}_1, \ldots, \vec{f}^{(i)}_{c-1})
-$$
+```
 
 ## 多表格的扩展
 
 
 ### 协议流程
 
-第一步： Prover 承诺（FRI Commit）三列表格 $(\vec{t}_0, \vec{t}_1,\vec{t}_{2})$，并发送它们的承诺 $M(\vec{t}_0), M(\vec{t}_1), M(\vec{t}_{2})$
+第一步： Prover 承诺（FRI Commit）三列表格 $`(\vec{t}_0, \vec{t}_1,\vec{t}_{2})`$，并发送它们的承诺 $`M(\vec{t}_0), M(\vec{t}_1), M(\vec{t}_{2})`$
 
-第二步：Prover 承诺两组多列查询：$(\vec{f}_0, \vec{f}_1, \vec{f}_2)$ 与 $(\vec{g}_0, \vec{g}_1, \vec{g}_2)$，并发送它们的承诺 $\Big(M(\vec{f}_0), M(\vec{f}_1), M(\vec{f}_{2}),M(\vec{g}_0), M(\vec{g}_1), M(\vec{g}_{2})\Big)$
+第二步：Prover 承诺两组多列查询：$`(\vec{f}_0, \vec{f}_1, \vec{f}_2)`$ 与 $`(\vec{g}_0, \vec{g}_1, \vec{g}_2)`$，并发送它们的承诺 $`\Big(M(\vec{f}_0), M(\vec{f}_1), M(\vec{f}_{2}),M(\vec{g}_0), M(\vec{g}_1), M(\vec{g}_{2})\Big)`$
 
-$$
+$`
 \begin{array}{ccc|ccc}
 \vec{f}_0 & \vec{f_1} & \vec{f_2} & \vec{g}_0 & \vec{g}_1 & \vec{g}_2 \\
 \hline
@@ -226,20 +227,24 @@ f_{0,2} & f_{1,2} & f_{2,2} & g_{0,2} & g_{1,2} & g_{2,2} \\
 \vdots & \vdots & \vdots & \vdots & \vdots & \vdots \\
 f_{0,n-1} & f_{1,n-1} & f_{2,n-1} & g_{0,n-1} & g_{1,n-1} & g_{2,n-1} \\
 \end{array}
-$$
+`$
 
 第三步：Verifier 发送 $\beta$ 与 $\gamma$
 
-第四步：Prover 计算 $\vec{a}^{(0)}$，$\vec{a}^{(1)}$ 与 $\vec{b}$，并发送它们的承诺
+第四步：Prover 计算 $\vec{a}^{(0)}$， $\vec{a}^{(1)}$ 与 $\vec{b}$，并发送它们的承诺
 $\Big(M(\vec{a}^{(0)}), M(\vec{a}^{(1)}), M(\vec{b})\Big)$
 
-$$
+$`
 \begin{split}
 a^{(0)}_i & = \frac{1}{\beta + f_{0,i } + \gamma\cdot f_{1,i} + \gamma^2 \cdot f_{2, i}}, \quad i \in [0, n) \\[3ex]
 a^{(1)}_i & = \frac{1}{\beta + g_{0,i } + \gamma\cdot g_{1,i} + \gamma^2 \cdot g_{2, i}}, \quad i \in [0, n) \\[3ex]
 b_i & = \frac{m_i}{\beta + t_{0,i} + \gamma\cdot t_{1,i} + \gamma^2 \cdot t_{2, i}}, \quad i \in [0, n) \\[3ex]
 \end{split}
-$$
+`$
+
+
+
+
 
 第五步：Verifier 发送 $\alpha$
 
