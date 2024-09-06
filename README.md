@@ -41,7 +41,7 @@
 - **System Contracts**: ZKsync Era 系统合约介绍.
 - **Gas Fee Model**: 解析 ZKsync Era 的 gas 费用机制及其与以太坊的区别.
 - **Differences from Ethereum**: 详解 ZKsync Era 与主网的区别以及开发注意事项.
-- **ZKsync Bridge**: 介绍 ZKsync 桥的工作方式，使用 LayerZero、Celer 网络作为例子.
+- **ZKsync Bridge**: 介绍 ZKsync 桥的工作方式.
 
 ### Lesson 4: DApp 部署 1
 
