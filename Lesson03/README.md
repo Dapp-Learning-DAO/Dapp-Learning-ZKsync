@@ -222,9 +222,9 @@ ValidatorTimelock 的实现通常包含以下关键要素：
 
 ### ContractDeployer
 
-`ContractDeployer` 是一个系统合约，负责在 ZKSync 上部署合约。要更好地理解它的工作原理，需要结合合约部署在 ZKSync 上是如何工作的。与以太坊不同，在以太坊中 `create` / `create2` 是操作码，而在 ZKSync 上，这些是通过调用 `ContractDeployer` 系统合约实现的。
+ContractDeployer 是一个系统合约，负责在 ZKSync 上部署合约。与以太坊不同，在以太坊中 create / create2 是操作码，而在 ZKSync 上，这些是通过调用 ContractDeployer 系统合约实现的。
 
-为了增加安全性，我们还区分了普通合约和账户的部署。因此，用户将使用的主要方法是 `create`、`create2`、`createAccount` 和 `create2Account`，它们分别模拟了 CREATE 和 CREATE2 的行为，用于部署普通合约和账户合约。
+为了增加安全性，区分了普通合约和账户的部署。因此，用户将使用的主要方法是 create、create2，它们分别模拟了 CREATE 和 CREATE2 的行为。
 
 - [ContractDeployer interface](https://github.com/matter-labs/era-contracts/blob/main/system-contracts/contracts/interfaces/IContractDeployer.sol)
 
@@ -372,7 +372,7 @@ ZKsync 称字节码解压过程为 `code decommitment`，因为这是将代码�
 
 1. Operator 被询问这是否是第一次进行代码解压。
 2. 如果 Operator 回答 “yes”，那么用户将支付全部费用。否则，用户无需为解压支付费用。
-3. 如有必要，代码将解压到 [`code page`](https://docs.zksync.io/zk-stack/components/compiler/specification/binary-layout#memory)（EraVM中一个特定的内存区域）。
+3. 如有必要，代码将解压到 [`code page`](https://docs.zksync.io/zk-stack/components/compiler/specification/binary-layout#memory)（EraVM 中一个特定的内存区域）。
 
 与存储交互不同，该过程的正确性部分由电路强制执行，即如果达到步骤 (3)，代码被解压，将证明 Operator 在步骤 (1) 中的回答是正确的。但是，如果程序在步骤 (2) 中耗尽 gas，则无法证明第一个陈述的正确性。原因是在调用 `decommitment` 时，在电路中很难证明这是否确实是第一次解压操作。
 
@@ -395,7 +395,7 @@ ZKSync Era 具有不同的内存定价规则：
 
 ### Charging for pubdata
 
-对于用户来说，pubdata 是一个重要的成本因素。ZKSync Era 是基于 state diff 的 rollup，这意味着 pubdata 不是为交易数据发布的，而是为状态变化发布的：修改的存储槽位、已部署的字节码、L2 -> L1 消息等。这允许修改同一存储槽位多次的应用程序（如 oracles）在 L1 pubdata 上保持一个恒定的占用空间。正确地处理 state diff rollups 需要一个针对 pubdata 收费的特殊解决方案。
+对于用户来说，pubdata 是一个重要的成本因素。ZKSync Era 是基于 state diff 的 rollup，这意味着 pubdata 不是为交易数据发布的，而是为状态变化发布的：这允许多次修改同一存储槽。正确地处理 state diff rollups 需要一个针对 pubdata 收费的特殊解决方案。
 
 ## Ethereum Difference
 
@@ -431,39 +431,64 @@ function myFactory(bytes memory bytecode) public {
 }
 ```
 
-不幸的是，在编译时无法区分上述情况。因此，我们强烈建议为任何使用 `type(T).creationCode` 部署子合约的工厂包含测试。
-
-由于在 ZKsync Era 上部署代码和运行时代码被合并在一起，我们不支持 `type(T).runtimeCode`，并且它始终会产生编译时错误。
+在 ZKsync Era 上部署代码和 `runtime code` 被合并在一起，不支持 `type(T).runtimeCode`，并且它始终会产生编译时错误。
 
 ### Address derivation(ts)
 
 ZKsync Era 使用了一种与 Ethereum 不同的地址推导方法。精确的公式可以在 SDK 中找到：
 
 ```ts
-export function create2Address(sender: Address, bytecodeHash: BytesLike, salt: BytesLike, input: BytesLike) {
-  const prefix = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("zksyncCreate2"));
+export function create2Address(
+  sender: Address,
+  bytecodeHash: BytesLike,
+  salt: BytesLike,
+  input: BytesLike
+) {
+  const prefix = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes("zksyncCreate2")
+  );
   const inputHash = ethers.utils.keccak256(input);
-  const addressBytes = ethers.utils.keccak256(ethers.utils.concat([prefix, ethers.utils.zeroPad(sender, 32), salt, bytecodeHash, inputHash])).slice(26);
+  const addressBytes = ethers.utils
+    .keccak256(
+      ethers.utils.concat([
+        prefix,
+        ethers.utils.zeroPad(sender, 32),
+        salt,
+        bytecodeHash,
+        inputHash,
+      ])
+    )
+    .slice(26);
   return ethers.utils.getAddress(addressBytes);
 }
 
 export function createAddress(sender: Address, senderNonce: BigNumberish) {
-  const prefix = ethers.utils.keccak256(ethers.utils.toUtf8Bytes("zksyncCreate"));
+  const prefix = ethers.utils.keccak256(
+    ethers.utils.toUtf8Bytes("zksyncCreate")
+  );
   const addressBytes = ethers.utils
-    .keccak256(ethers.utils.concat([prefix, ethers.utils.zeroPad(sender, 32), ethers.utils.zeroPad(ethers.utils.hexlify(senderNonce), 32)]))
+    .keccak256(
+      ethers.utils.concat([
+        prefix,
+        ethers.utils.zeroPad(sender, 32),
+        ethers.utils.zeroPad(ethers.utils.hexlify(senderNonce), 32),
+      ])
+    )
     .slice(26);
 
   return ethers.utils.getAddress(addressBytes);
 }
 ```
 
-由于字节码与 Ethereum 不同，因为 ZKsync 使用了修改版的 EVM，从bytecode哈希推导的地址也会有所不同。这意味着在 Ethereum 和 ZKsync 上部署的相同bytecode将具有不同的地址，并且 Ethereum 地址在 ZKsync 上仍然是可用且未使用的。
+由于字节码与 Ethereum 不同，从 bytecode 哈希推导的地址也会有所不同。这意味着在 Ethereum 和 ZKsync 上部署的相同 bytecode 将具有不同的地址。
 
 ### CALL, STATICCALL, DELEGATECALL
 
-在 EVM 中，如果 outsize（输出数据的大小）不为 0，即使返回数据的大小比预期的小，EVM 也会先将内存分配为 out + outsize（向上取整，以 `word` 为单位），然后再写入返回数据。
-而 zkSync 的处理方式与之不同, 返回数据的复制和写入是在调用完成之后才进行的，而不是像 EVM 那样提前分配内存。因此，zkSync 需要通过迭代返回数据的循环，进行附加检查。如果 `out + outsize > returndataSize`（返回的数据大小），则会触发 panic。
-这意味着 zkSync 更倾向于在操作结束后再去分配内存并复制返回数据。zkSync 不会像 EVM 那样，因提前内存分配而导致不必要的内存增长和 panic。
+在 EVM 中，如果 outsize（输出数据的大小）不为 0，即使返回数据的大小比预期的小，EVM 也会先将内存分配为 out + outsize（向上取整，以 word 为单位），然后再写入返回数据。
+
+而 ZKsync 返回数据的复制和写入是在调用完成之后才进行的，而不是像 EVM 提前分配内存。因此，ZKsync 需要通过对返回数据的进行遍历检查。
+
+如果 out + outsize > returndataSize（返回的数据大小），则会触发 panic。
 
 ```solidity
 success := call(gas(), target, 0, in, insize, out, outsize) // grows to 'min(returndatasize(), out + outsize)'
@@ -478,7 +503,7 @@ returndatacopy(out, 0, returndatasize()) // grows to 'out + returndatasize()'
 
 ### MSTORE, MLOAD
 
-与 EVM 不同，在 EVM 上内存的增长是以 `words` 为单位的，而在 zkEVM 上内存的增长是以`bytes` 为单位的。例如，如果你在 zkEVM 上写入 `mstore(100, 0)`，则 `msize` 将为 132 ，而在 EVM 上它将为 160 。需要注意的是，EVM 中内存支付的增长是二次的，而在 zkEVM 上费用是按 1 erg 每字节线性计算的。
+与 EVM 不同，在 EVM 上内存的增长是以 `words` 为单位的，而在 zkEVM 上内存的增长是以`bytes` 为单位的。例如，如果你在 zkEVM 上写入 `mstore(100, 0)`，则 `msize` 将为 132 ，而在 EVM 上它将为 160 。需要注意的是，EVM 中内存支付的增长是二次幂增长，而在 zkEVM 上费用是按 1 erg 每字节线性计算的。
 
 另外，我们的编译器有时可以优化未使用的内存读取/写入。这可能会导致 `msize` 与 Ethereum 不同，因为分配的字节更少，导致 EVM 中 panic 的情况，而 zkEVM 不会因为内存增长的差异而出现这种情况。
 
@@ -490,47 +515,70 @@ returndatacopy(out, 0, returndatasize()) // grows to 'out + returndatasize()'
 
 ### RETURN, STOP
 
-构造函数返回不可变值。如果你在 zkSync Era 上的汇编块中使用 `RETURN` 或 `STOP`，它将留下未初始化的不可变变量。
+构造函数返回不可变值。如果你在 zkSync Era 上的汇编块中使用 `RETURN` 或 `STOP`，它将导致未初始化的 immutable 变量 初始化失败
+
+```solidity
+contract Example {
+    uint immutable x;
+
+    constructor() {
+        x = 45;
+
+        assembly {
+            // The statements below are overridden by the zkEVM compiler to return
+            // the array of immutables.
+
+            // The statement below leaves the variable x uninitialized.
+            // return(0, 32)
+
+            // The statement below leaves the variable x uninitialized.
+            // stop()
+        }
+    }
+
+    function getData() external pure returns (string memory) {
+        assembly {
+            return(0, 32) // works as expected
+        }
+    }
+}
+```
 
 ### Nonce
 
-在Ethereum中，每个账户都关联着一个称为nonce的唯一标识符。对于外部拥有的账户（EOAs），nonce实现了三个主要功能：防止网络上的重放攻击、确保交易按照预期的顺序执行，并作为在推导地址公式中使用的唯一标识符。每次交易执行后，nonce都会递增。
+在 Ethereum 中，每个账户都关联着一个称为 nonce 的唯一标识符。对于外部拥有的账户（EOAs），nonce 实现了三个主要功能：
 
-在智能合约的上下文中，nonce有一个独特的用途：它决定了从另一个合约部署的新合约的地址。当使用 `create` 或 `create2` 函数创建新合约时，nonce会递增，以表示部署了一个新合约。与EOAs不同，EOAs每次交易只能增加一次nonce，而智能合约则能够在一次交易中多次增加其nonce。
+- 防止网络上的重放攻击
+- 确保交易按照预期的顺序执行
+- 作为在推导地址公式中使用的唯一标识符。
 
-但是 ZKsync 有原生抽象账户，nonce 既要保护账户免于重放攻击，也要参与生成部署合约的地址生成。（考虑到ZKsync中的账户可以是智能合约，它们可以在一笔交易中部署多个合约。）
+每次交易执行后，nonce 都会递增。
 
-为了在交易验证和合约部署上下文中保持nonce的预期使用和方便性，ZKsync引入了两种不同的nonce：
+在智能合约的上下文中，nonce 有一个独特的用途：它决定了从另一个合约部署的新合约的地址。当使用 create 或 create2 函数创建新合约时，nonce 会递增，以表示部署了一个新合约。与 EOA 不同，EOA 每次交易只能增加一次 nonce，而智能合约则能够在一笔交易中多次增加其 nonce。
 
-- 交易nonce
-- 部署nonce
+但是 ZKsync 有原生抽象账户，nonce 既要保护账户免于重放攻击，也要参与生成部署合约的地址生成。（考虑到 ZKsync 中的账户可以是智能合约，它们可以在一笔交易中部署多个合约。）
 
-交易nonce用于交易验证，而部署nonce则在发生合约部署时递增。通过这种方式，账户可以仅通过跟踪一个nonce值发送多笔交易，并且合约可以部署许多其他合约而不会与交易nonce发生冲突。
+ZKsync 引入了两种不同的 nonce：
 
-在ZKsync和Ethereum的nonce管理之间还有其他一些小的差异：
+- Transaction nonce
+- Deployment nonce
 
-- 新创建的合约以 `deployment nonce` 值为零开始。这与Ethereum形成对比，在Ethereum中，遵循 EIP-161 的规定，新创建合约的nonce从1开始。
+Transaction nonce 用于交易验证，而 Deployment nonce 则在发生合约部署时递增。通过这种方式，账户可以仅通过跟踪一个 nonce 值发送多笔交易，并且合约可以部署许多其他合约而不会与交易 nonce 发生冲突。
 
-- 在ZKsync上，部署nonce仅在部署成功时递增。在Ethereum中，部署nonce在部署时更新，即使合约创建失败也是如此。
+其他的差异：
 
-### Libraries
+- 新创建的合约以 `deployment nonce` 值为零开始。这与 Ethereum 形成对比，在 Ethereum 中，遵循 EIP-161 的规定，新创建合约的 nonce 从 1 开始。
 
-ZKsync 依赖于 `solc` 优化器来进行库的内联，因此只有当库已经被优化器内联时，才可以在不部署的情况下使用它。
-
-已部署库的地址必须在项目配置中设置。这些地址会替换它们在IRs中的占位符：Yul中的 `linkersymbol` 和 EVM遗留汇编中的 `PUSHLIB`。
-
-所有链接都发生在编译时。部署时链接不被支持。
+- 在 ZKsync 上，部署 nonce 仅在部署成功时递增。在 Ethereum 中，部署 nonce 在部署时更新，即使合约创建失败也是如此。
 
 ### Native AA vs EIP 4337
 
-ZKsync 的原生账户抽象与以太坊的 EIP 4337 都旨在增强账户的灵活性和用户体验，但它们在以下关键方面有所不同：
+ZKsync Native AA 与以太坊的 EIP 4337 都旨在增强账户的灵活性和用户体验，但它们在以下关键方面有所不同：
 
 1. **Implementation Level**: ZKsync 的账户抽象集成在协议层级；然而，EIP 4337 避免了在协议层级的实现。
 
 2. **Account Types**: 在 ZKsync Era 中，智能合约账户和 Paymaster 是一级公民。在底层，所有账户（即使是 EOAs）都表现得像智能合约账户；所有账户都支持 Paymaster 。
 
-3. **Transaction Processing**: EIP 4337 为智能合约账户引入了一个独立的交易流程，该流程依赖于用户操作的独立 mempool 以及打包器节点，这些节点会将用户操作打包并发送到 EntryPoint 合约进行处理，导致了两个独立的交易流程。相比之下，在 ZKsync Era 中，EOA 和智能合约账户的交易共享一个统一的 mempool。在 ZKsync Era 中，操作员负责打包交易，无论账户类型如何，并将其发送到 Bootloader（类似于 EntryPoint 合约），这导致只有一个 mempool 和交易流程。
+3. **Transaction Processing**: EIP 4337 为智能合约账户引入了一个独立的交易流程，该流程依赖于 bundler 将用户操作打包并发送到 EntryPoint 合约进行处理。ZKsync Era 中，EOA 和智能合约账户的交易共享一个统一的 mempool。无论账户类型如何，交易都会呗发送到 Bootloader（类似于 EntryPoint 合约）。
 
-4. **Paymasters support**: ZKsync Era 允许 EOA 和智能合约账户都能从 Paymaster 中受益，因为它只有一个交易流程。另一方面，EIP 4337 不支持 EOA 的 Paymaster ，因为 Paymaster 仅在智能合约账户的新交易流程中实现。
-
-
+4. **Paymasters support**: ZKsync Era 的 EOA 和 智能合约 都能从 Paymaster 中受益。另一方面，EIP 4337 不支持 EOA 的 Paymaster ，因为 Paymaster 仅在智能合约账户的新交易流程中实现。
