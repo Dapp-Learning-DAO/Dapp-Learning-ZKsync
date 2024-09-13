@@ -130,8 +130,6 @@
 
 [video p1](https://www.youtube.com/watch?v=JAfwbs_Ymnk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=9) | [video p2](https://www.youtube.com/watch?v=BDLOuGmb7mk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=10) | [Doc](./boojum-02/README.md)
 
-![poster](./Lesson01/docs/img/zksync-tutorial-poster.png)
-
 ## Reference
 
 - [ZKsync Era Doc](https://docs.ZKsync.io/)
