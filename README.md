@@ -123,7 +123,7 @@
 
 ### Lesson 5: DApp Development 2
 
-- **ZK red packet**: Develop a ZK red packet product (contract + frontend) on ZKsync Era.
+- **ZK red packet**: Develop a ZK redpacket on ZKsync Era.
 
 ### Lesson 6: DApp Development 3
 

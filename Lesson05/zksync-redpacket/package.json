@@ -1,0 +1,40 @@
+{
+    "name": "zksync-hardhat-template",
+    "description": "A template for zkSync smart contracts development with Hardhat",
+    "private": true,
+    "author": "Matter Labs",
+    "license": "MIT",
+    "repository": "https://github.com/matter-labs/zksync-hardhat-template.git",
+    "scripts": {
+        "deploy": "hardhat deploy-zksync --script deploy.ts",
+        "interact": "hardhat deploy-zksync --script interact.ts",
+        "compile": "hardhat compile",
+        "clean": "hardhat clean",
+        "test": "hardhat test --network hardhat"
+    },
+    "devDependencies": {
+        "@matterlabs/hardhat-zksync-deploy": "^1.2.1",
+        "@matterlabs/hardhat-zksync-node": "^1.0.2",
+        "@matterlabs/hardhat-zksync-solc": "^1.1.4",
+        "@matterlabs/hardhat-zksync-verify": "^1.4.1",
+        "@matterlabs/zksync-contracts": "^0.6.1",
+        "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+        "@nomiclabs/hardhat-etherscan": "^3.1.8",
+        "@openzeppelin/contracts": "^5.0.2",
+        "@types/mocha": "^10.0.6",
+        "@types/snarkjs": "^0.7.8",
+        "circom_tester": "^0.0.20",
+        "circomlib": "^2.0.5",
+        "circomlibjs": "^0.1.7",
+        "dotenv": "^16.4.5",
+        "ethers": "^6.11.1",
+        "hardhat": "^2.21.0",
+        "merkletreejs": "^0.4.0",
+        "mocha": "^10.3.0",
+        "snarkjs": "^0.7.3",
+        "ts-node": "^10.9.2",
+        "typescript": "^4.9.5",
+        "viem": "^2.21.12",
+        "zksync-ethers": "^6.4.0"
+    }
+}
