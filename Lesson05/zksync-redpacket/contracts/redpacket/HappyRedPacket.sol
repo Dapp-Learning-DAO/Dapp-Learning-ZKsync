@@ -96,17 +96,20 @@ contract HappyRedPacket is Initializable {
             "Unrecognizable token type"
         );
 
-        // require minium 0.1 for each user
-        require(
-            _total_tokens >
-                10 ** (IERC20(_token_addr).decimals() - 1) * _number,
-            "At least 0.1 for each user"
-        );
-
         uint256 received_amount = _total_tokens;
-        if (_token_type == 0)
+        if (_token_type == 0) {
+            require(
+                msg.value > 10 ** 15 * _number,
+                "At least 0.001 ETH for each user"
+            );
             require(msg.value >= _total_tokens, "No enough ETH");
-        else if (_token_type == 1) {
+        } else if (_token_type == 1) {
+            // require minium 0.1 for each user
+            require(
+                _total_tokens >
+                    10 ** (IERC20(_token_addr).decimals() - 1) * _number,
+                "At least 0.1 for each user"
+            );
             // https://github.com/DimensionDev/Maskbook/issues/4168
             // `received_amount` is not necessarily equal to `_total_tokens`
             uint256 balance_before_transfer = IERC20(_token_addr).balanceOf(
@@ -244,7 +247,9 @@ contract HappyRedPacket is Initializable {
         rp.packed.packed1 = rewriteBox(packed.packed1, 128, 96, 0);
 
         if (token_type == 0) {
-            (bool success, ) = payable(msg.sender).call{value:remaining_tokens}("");
+            (bool success, ) = payable(msg.sender).call{
+                value: remaining_tokens
+            }("");
             require(success, "Refund failed.");
         } else if (token_type == 1) {
             transfer_token(token_address, msg.sender, remaining_tokens);
@@ -281,9 +286,9 @@ contract HappyRedPacket is Initializable {
         address token_address = address(
             uint160(unbox(packed.packed2, 64, 160))
         );
-        uint minium_value = 10 ** (IERC20(token_address).decimals() - 1);
-
+        
         if (ifrandom == 1) {
+            uint minium_value = 10 ** (IERC20(token_address).decimals() - 1);
             if (total_number - claimed_number == 1)
                 claimed_tokens = remaining_tokens;
             else {
@@ -329,7 +334,9 @@ contract HappyRedPacket is Initializable {
 
         // Transfer the red packet after state changing
         if (token_type == 0) {
-            (bool success,) = payable(msg.sender).call{value: claimed_tokens}("");
+            (bool success, ) = payable(msg.sender).call{value: claimed_tokens}(
+                ""
+            );
             require(success, "Claim failed.");
         } else if (token_type == 1)
             transfer_token(token_address, msg.sender, claimed_tokens);

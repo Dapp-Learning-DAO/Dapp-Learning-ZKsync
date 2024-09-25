@@ -3,13 +3,567 @@
 我们将在 ZKsync Era 网络上部署一个 ZK 红包项目，它将满足以下需求：
 
 - 去中心化的红包创建以及领取体验
-- 创建者可以设置白名单，名单之外的地址无法领取奖励
+- 创建者可以设置白名单，名单之外的地址无法领取奖励，有效避免机器人抢红包等恶意行为
 - 支持随机金额
 - 使用 ZK snark 技术，支持密码红包功能（在不暴露密码明文的基础上，在链上验证密码是否正确）
 
 > ZK 红包项目已经在 DappLearning 官网上线，您可以在 [dapplearning.org/reward](https://dapplearning.org/reward) 体验完整的红包！
 
-## get-started
+## 合约设计
+
+### 需求拆解
+
+接下来我们考虑如何设计红包合约，以满足上述需求。
+
+- 红包创建者可以设置白名单。显然将白名单完整的保存于链上是不现实的，这将会带来大量的gas消耗，一种通用的方案就是使用 [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree)。
+  - 链上只需要保存 Merkle Root，用户领取红包时，需要根据完整的白名单地址列表，生成 Merkle Proof
+  - 由于生成proof需要完整的地址列表，所以我们需要额外的为用户保存这些列表，例如结合后端数据库，或者使用 IPFS 去中心化存储
+- 支持随机金额。实际上是需要链上生成随机数来随机划分金额。
+  - 可以简单的使用 `block.timestamp`, `msg.sender`, `nonce`, 随机种子等字段进行打包hash，然后转换为数字
+  - 或者使用 Chainlink 的链上随机数服务（有一定使用成本）
+- 支持红包密码功能。如果我们希望实现类似口令红包的功能，用户只有在输入正确密码的情况下才能领取，那么在智能合约中实现最大的难点在于如何隐藏明文密码。
+  - 使用 ZK snark 技术，设计一个简单的电路，即将明文密码进行一次hash运算，用户在领取时，提供这个hash运算过程的 ZK proof证明
+  - 由于明文密码已经经过hash运算，公开的 zk 电路输出只是一个hash值，不会暴露明文密码
+  - 而 ZK snark 技术保证了用户进行hash的原象是正确的密码
+
+### 流程梳理
+
+![redpacket.drawio.png](./docs/img/redpacket.drawio.png)
+
+我们继续梳理整个流程：
+
+1. 初始化红包合约
+  a. 设置随机种子，用于随机红包的随机数生成
+  b. 设置 ZK snark 的 verifier 合约地址（稍后会解释用途）
+2. 创建红包的准备阶段
+  a. 在调用合约创建接口之前，创建者还需要在链下进行一些计算：
+    - 根据白名单地址列表生成 merkle tree，拿到 merkle root
+    - 如果将创建密码红包，需要计算密码的hash值，**注意：这里必须使用和 zk 电路一致的hash方法，且需要 `zk-friendly`, 比如 `Poseidon Hash`**
+    - 如果不设置密码，`lock` 字段直接传零值
+  b. 保存白名单列表，一种方法是传给后端数据库，一种方法是保存在去中心化存储中，例如 IPFS
+  c. 如果红包奖励的是ERC20 token，需要先进行 approve 授权操作
+3. 创建红包
+  a. 调用红包创建接口，传入相关参数
+  b. 红包合约的 nonce + 1
+  c. 根据 `msg.sender` + `message` (自定义消息，一般为时间戳) 进行hash，作为新红包的id
+  d. 合约进行条件检查
+    - 可领取人数检查，至少大于 0，且不能超过上限
+    - token_type 检查，0 为 ETH，1 为 ERC20 token，不允许其他值
+    - 保证每个领取者领取的金额有一个下限（比如0.1），避免因随机生产的过于极端的金额，即 `总金额 / 数量 >= 0.1`
+    - 检查新红包id没有重复
+  e. 转入 ETH 或者 ERC20 token ，检查合约余额变化，转账金额是否足够
+  f. 发送 event，便于链下跟踪相关数据
+4. 领取红包准备阶段
+  a. 是否为密码红包
+    - 是，需要额外生成 ZK proof
+    - 否，跳过
+  b. 获取完整的白名单地址列表，生成自己的 merkle proof
+5. 领取红包, 这里区分为两个接口，一个普通红包领取，不需要传入 zk proof，另一个密码红包领取，需要 zk proof
+  a. 是否为密码红包
+    - 是，调用 `claimPasswordRedpacket`, 大部分流程与普通红包一样，但是会先调用 zk 相关的验证方法 `Groth16Verifier.verifyProof()`
+    - 否，调用 `claimOrdinaryRedpacket`
+  b. 条件检查
+    - 红包是否已过期，过期无法领取
+    - 已领取的人数小于总可领取人数，即可领取人数满后，不能领取
+    - 验证 merkle proof，即领取者是否在白名单列表中
+    - 领取者尚未领取该红包
+  c. 是否为随机金额红包
+    - 是，计算随机数，进而得到随机金额，且不低于领取下限
+    - 否，直接均分金额
+  d. 存储领取者的地址以及金额
+  e. 转账
+  f. 发送 event，便于链下跟踪相关数据
+6. 过期红包的金额赎回
+  a. 条件检查
+    - 是否为创建者
+    - 该红包是否已经过期
+    - 红包仍有金额（没有领取完）
+  b. 转账
+  c. 发送 event，便于链下跟踪相关数据
+
+## how to use zksnark.js
+
+![circom_and_snarkjs.webp](./docs/img/circom_and_snarkjs.webp)
+
+## 核心代码实现
+
+### circom circuit
+
+为了实现 zk 验证密码，我们需要编写一个简单的 circom 电路。
+
+> circom的基本语法比较简单，可以参考 [circom 官方文档](https://docs.circom.io/getting-started)
+
+这个电路约束了一个简单的 Poseidon hash 的运算过程，prover 将通过这个电路，证明他的 hash 结果是按照规则计算得出，而计算结果将与链上保存的 hash lock 值比较，如果一致，说明 prover 输入了正确的密码。
+
+```circom
+pragma circom 2.0.0;
+
+include "../node_modules/circomlib/circuits/poseidon.circom";
+
+template PoseidonHasher() {
+    signal input in;
+    signal output out;
+
+    component poseidon = Poseidon(1);
+    poseidon.inputs[0] <== in;
+    out <== poseidon.out;
+}
+
+component main = PoseidonHasher();
+```
+
+### 合约
+
+#### RedPacket struct
+
+存储 Redpacket 数据的结构体，以及 `redpacket_by_id` mapping.
+
+字段说明：
+
+- `packed` 合并存储一些长度较短的数据，节省gas
+  - `total_tokens` 总金额
+  - `expire_time` 红包过期的时间戳
+  - `token_addr` ERC20 token 的地址, ETH 则可以输入零地址
+  - `claimed_numbers` 已经领取的人数
+  - `token_type` 0 为 ETH 红包，1 为 ERC20 token 红包
+  - `ifrandom` true 为随机金额， false 为平均分配金额
+
+```solidity
+struct RedPacket {
+    Packed packed;
+    mapping(address => uint256) claimed_list;
+    bytes32 merkleroot;
+    bytes32 lock;
+    address creator;
+}
+struct Packed {
+    uint256 packed1; // 0 (128) total_tokens (96) expire_time(32)
+    uint256 packed2; // 0 (64) token_addr (160) claimed_numbers(15)  token_type(1) ifrandom(1)
+}
+
+mapping(bytes32 => RedPacket) public redpacket_by_id;
+```
+
+#### create_red_packet
+
+```solidity
+function create_red_packet(
+    bytes32 _merkleroot,
+    bytes32 _lock,
+    uint _number,
+    bool _ifrandom,
+    uint _duration,
+    string memory _message,
+    string memory _name,
+    uint _token_type,
+    address _token_addr,
+    uint _total_tokens
+) public payable {
+    nonce++;
+
+    // check conditions...
+
+    // ETH / token transferFrom creator
+    if (_token_type == 0) {
+            require(
+                msg.value > 10 ** 15 * _number,
+                "At least 0.001 ETH for each user"
+            );
+            require(msg.value >= _total_tokens, "No enough ETH");
+    } else if (_token_type == 1) {
+        
+        IERC20(_token_addr).safeTransferFrom(
+            msg.sender,
+            address(this),
+            _total_tokens
+        );
+        
+        received_amount = balance_after_transfer - balance_before_transfer;
+        require(received_amount >= _total_tokens, "#received > #packets");
+    }
+
+    bytes32 _id = keccak256(abi.encodePacked(msg.sender, _message));
+
+    // save data to redpacket_by_id[_id]
+}
+```
+
+#### claim
+
+claim 根据红包是否设置密码，分为两个接口，主要区别在于有密码需要额外传入 ZK proof，即三个二维数组 `pa`, `pb`, `pc`, 且需要调用外部合约 Verifier 的验证方法，进行ZK验证。
+
+```solidity
+function claimOrdinaryRedpacket(
+    bytes32 _id,
+    bytes32[] memory proof
+) public returns (uint claimed) {
+    //check exist or not
+    RedPacket storage rp = redpacket_by_id[_id];
+    require(rp.lock == bytes32(0), "Not ordinary redpacket");
+
+    claimed = _claim(_id, proof);
+}
+
+function claimPasswordRedpacket(
+    bytes32 _id,
+    bytes32[] memory proof,
+    uint[2] calldata _pA,
+    uint[2][2] calldata _pB,
+    uint[2] calldata _pC
+) public returns (uint claimed) {
+    RedPacket storage rp = redpacket_by_id[_id];
+    require(rp.lock != bytes32(0), "Not password redpacket");
+    uint256[1] memory input;
+    input[0] = uint256(rp.lock);
+
+    require(
+        verifier.verifyProof(_pA, _pB, _pC, input),
+        "ZK Verification failed, wrong password"
+    );
+
+    claimed = _claim(_id, proof);
+}
+```
+
+claim 内部函数的核心逻辑代码实现:
+
+1. 检查红包是否过期
+2. 检查 Merkle proof
+3. 根据是否为随机红包，来计算领取金额
+  a. 是
+    - 如果仅剩一个未领取的红包，则直接将所剩余额都给予最后一位领取者
+    - 计算随机金额，需要扣除剩余的最低金额，再进行随机
+  b. 否
+    - 如果仅剩一个未领取的红包，则直接将所剩余额都给予最后一位领取者
+    - 均分金额
+4. 检查用户是否已经领取过该红包
+5. 转账
+6. 发送 event
+
+```solidity
+function _claim(
+    bytes32 _id,
+    bytes32[] memory proof
+) internal returns (uint claimed) {
+    ...
+    // check expired
+    require(unbox(packed.packed1, 224, 32) > block.timestamp, "Expired");
+    ...
+
+    // check merkle proof
+    require(
+        MerkleProof.verify(proof, rp.merkleroot, _leaf(msg.sender)),
+        "Verification failed, forbidden"
+    );
+
+    ...
+    if (ifrandom == 1) {
+        if (total_number - claimed_number == 1)
+            claimed_tokens = remaining_tokens;
+        else {
+            // reserve minium amount => (total_number - claimed_number) * 0.1
+            uint reserve_amount = (total_number - claimed_number) *
+                minium_value;
+            uint distribute_tokens = remaining_tokens - reserve_amount;
+            claimed_tokens =
+                random(seed, nonce) %
+                ((distribute_tokens * 2) / (total_number - claimed_number));
+
+            // minium claimed_tokens for user is 0.1 ; and round the claimed_tokens to decimal 0.1
+            claimed_tokens = claimed_tokens < minium_value
+                ? minium_value
+                : (claimed_tokens - (claimed_tokens % minium_value));
+        }
+    } else {
+        if (total_number - claimed_number == 1)
+            claimed_tokens = remaining_tokens;
+        else
+            claimed_tokens =
+                remaining_tokens /
+                (total_number - claimed_number);
+    }
+
+    // Penalize greedy attackers by placing duplication check at the very last
+    require(rp.claimed_list[msg.sender] == 0, "Already claimed");
+
+    // save data to redpacket_by_id[id]
+
+    // send event
+    
+}
+```
+
+#### refund
+
+如果红包已经过期，且金额还没领取完，创建者可以调用 `refund` 赎回未领取的金额。
+
+1. 检查是否为红包创建者
+2. 检查是否已过期
+3. 将剩余的 ETH / ERC20 转给创建者
+4. 发送 event
+
+```solidity
+function refund(bytes32 id) public {
+    ...
+    require(creator == msg.sender, "Creator Only");
+    require(
+        unbox(packed.packed1, 224, 32) <= block.timestamp,
+        "Not expired yet"
+    );
+    ...
+
+    if (token_type == 0) {
+        (bool success, ) = payable(msg.sender).call{
+            value: remaining_tokens
+        }("");
+        require(success, "Refund failed.");
+    } else if (token_type == 1) {
+        transfer_token(token_address, msg.sender, remaining_tokens);
+    }
+
+    emit RefundSuccess(id, token_address, remaining_tokens, rp.lock);
+}
+```
+
+### 部署与交互脚本
+
+#### 部署
+
+1. 部署红包合约
+2. 部署 Groth16Verifier 合约（该合约通过 snarkjs 结合电路文件生成，详细过程会在下面讲解）
+3. 红包合约初始化，将 Groth16Verifier 合约地址传入
+4. 保存合约地址到 json 文件
+
+```ts
+import { deployContract, saveDeployment } from "./utils";
+
+export default async function () {
+  const redPacket = await deployContract("HappyRedPacket");
+  const redPacketAddress = await redPacket.getAddress();
+
+  const groth16Verifier = await deployContract("Groth16Verifier");
+  const groth16VerifierAddress = await groth16Verifier.getAddress();
+
+  console.log("Groth16Verifier address:", groth16VerifierAddress);
+
+  let initRecipt = await redPacket.initialize(groth16VerifierAddress);
+
+  await initRecipt.wait();
+
+  saveDeployment({
+    Redpacket: redPacketAddress,
+    Verifier: groth16VerifierAddress,
+  });
+}
+```
+
+#### 交互脚本
+
+1. 读取红包合约部署地址，初始化红包合约实例
+2. 初始化测试 token 实例
+3. approve 授权操作
+4. 根据白名单生成 Merkle Tree， 这里使用 `merkletreejs` 依赖.
+  a. 需要将 address 先进行 hash 再作为 Merkle Tree 的叶子节点
+5. hashlock 字段
+  a. 如果没有设置密码，直接传 `BYTES_ZERO`
+  b. 如果有设置密码，需要使用 `Poseidon Hash` 对明文密码进行hash，作为 hash lock 值
+6. 创建红包
+7. 领取红包
+
+```ts
+import MerkleTree from "merkletreejs";
+...
+
+export default async function () {
+  ...
+  // Initialize contract instance for interaction
+  const redPacket = new ethers.Contract(
+    CONTRACT_ADDRESS,
+    CONTRACT_ABI,
+    wallet, // Interact with the contract on behalf of this wallet
+  );
+  const redPacketAddress = await redPacket.getAddress();
+
+  const testToken = new ethers.Contract(
+    ERC20_ADDRESS,
+    (await hre.artifacts.readArtifact("SimpleToken")).abi,
+    wallet,
+  );
+  const testTokenAddress = await testToken.getAddress();
+
+  // approve...
+
+  // white list
+  const claimerList = [
+    wallet.address,
+    "some other address",
+  ];
+  // generate merkle tree
+  const merkleTree = new MerkleTree(
+    claimerList.map((user) => hashToken(user as `0x${string}`)),
+    keccak256,
+    { sortPairs: true },
+  );
+  const merkleTreeRoot = merkleTree.getHexRoot();
+  console.log("merkleTree Root:", merkleTreeRoot);
+
+  let message = new Date().getTime().toString();
+
+  let lock = ZERO_BYTES32;
+  if (password) {
+    lock = await calculatePublicSignals(password);
+  }
+
+  let redpacketID = "";
+
+  await createRedpacket();
+  await cliamRedPacket(wallet);
+}
+```
+
+创建红包, 发出创建红包的交易后，会监听交易回执，解析其中的event参数，将红包 id 打印出来
+
+```ts
+async function createRedpacket() {
+  // create_red_packet
+  let creationParams = {
+    _merkleroot: merkleTreeRoot,
+    _lock: lock,
+    _number: claimerList.length,
+    _ifrandom: true,
+    _duration: 259200,
+    _message: message,
+    _name: "cache",
+    _token_type: 1,
+    _token_addr: testTokenAddress,
+    _total_tokens: parseEther("1"),
+  };
+
+  let createRedPacketTx = await redPacket.create_red_packet(
+    ...Object.values(creationParams),
+  );
+  const createRedPacketRes = await createRedPacketTx.wait();
+  const creationEvent = createRedPacketRes.logs.find(
+    (_log: EventLog) =>
+      typeof _log.fragment !== "undefined" &&
+      _log.fragment.name === "CreationSuccess",
+  );
+  if (creationEvent) {
+    const [
+      total,
+      id,
+      ...
+    ] = creationEvent.args;
+    redpacketID = id;
+
+    console.log(
+      `CreationSuccess Event, total: ${total.toString()}\tRedpacketId: ${id}  `,
+    );
+    console.log(`lock: ${hash_lock}`);
+  } else {
+    throw "Can't parse CreationSuccess Event";
+  }
+
+  console.log("Create Red Packet successfully");
+}
+```
+
+领取红包，根据是否有密码，调用不同的接口
+
+- 有密码，先生成 zk proof，再调用 `claimPasswordRedpacket`
+- 没有密码，调用 `claimOrdinaryRedpacket`
+
+```ts
+// claim
+async function cliamRedPacket(user) {
+  let merkleProof = merkleTree.getHexProof(hashToken(user.address));
+  const balanceBefore = await testToken.balanceOf(user.address);
+
+  let claimTx: any;
+  if (password) {
+    const proofRes = await calcProof(password);
+    if (proofRes) {
+      const {
+        proof: { a, b, c },
+        publicSignals,
+      } = proofRes;
+      claimTx = await redPacket
+        .claimPasswordRedpacket(redpacketID, merkleProof, a, b, c)
+        .catch((err) => console.error(err));
+    }
+  } else {
+    claimTx = await redPacket.claimOrdinaryRedpacket(
+      redpacketID,
+      merkleProof,
+    );
+  }
+
+  const createRedPacketRecipt = await claimTx.wait();
+  console.log("createRedPacketRecipt", createRedPacketRecipt);
+
+  const balanceAfter = await testToken.balanceOf(user.address);
+  console.log(
+    `user ${user.address} has claimd ${balanceAfter - balanceBefore}`,
+  );
+}
+```
+
+`calculatePublicSignals` 对明文密码进行 poseidon hash，这里使用 `circomlibjs` 依赖
+
+```ts
+import { buildPoseidon } from "circomlibjs";
+
+export const calculatePublicSignals = async (input: string) => {
+  const poseidon = await buildPoseidon();
+  const hash = poseidon.F.toString(poseidon([keccak256(toHex(input))]));
+  return toHex(BigInt(hash), { size: 32 });
+};
+```
+
+`calcProof` 计算 zk proof
+
+- 将密码作为电路的输入 `in` 字段，依赖 wasm 和 zkey 文件生成 proof
+- 验证生成的proof是否能通过
+
+```ts
+import { encodePacked, keccak256, parseEther, toHex } from "viem";
+import { groth16 } from "snarkjs";
+...
+
+export const calcProof = async (input: string) => {
+  const proveRes = await groth16.fullProve(
+    { in: keccak256(toHex(input)) },
+    path.join(__dirname, "../datahash_js/datahash.wasm"),
+    path.join(__dirname, "../circuit_final.zkey")
+  );
+
+  const res = await groth16.verify(
+    Vkey,
+    proveRes.publicSignals,
+    proveRes.proof
+  );
+
+  if (res) {
+    const proof = convertCallData(
+      await groth16.exportSolidityCallData(
+        proveRes.proof,
+        proveRes.publicSignals
+      )
+    );
+
+    return {
+      proof: proof,
+      publicSignals: proveRes.publicSignals,
+    };
+  } else {
+    console.error("calculateProof verify faild.");
+    return null;
+  }
+};
+```
+
+
+## 测试,部署,交互
 
 ### 安装依赖
 

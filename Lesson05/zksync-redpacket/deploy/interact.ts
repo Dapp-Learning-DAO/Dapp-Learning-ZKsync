@@ -20,11 +20,6 @@ function hashToken(account: `0x${string}`) {
   );
 }
 
-// Address of the contract to interact with
-// const CONTRACT_ADDRESS = "0x0Aa38Cffc6A72e6349c8bfF22497AeC4A02fc75c"; // zksync mainnet
-
-// sepolia SimpleToken address 0xD9a42d80741D4CE4513c16a70032C3B95cbB0CCE
-
 // zero bytes
 const ZERO_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -33,7 +28,6 @@ const ERC20_ADDRESS = "0x264d10475eF47cFABdD3A0592d285ac612A4586D"; // Test REC2
 const tokenAmount = parseUnits("10", 18);
 const password = "abcd1234";
 
-// An example of a script to interact with the contract
 export default async function () {
   const CONTRACT_ADDRESS = contractDeployments.Redpacket;
   console.log(`Running script to interact with contract ${CONTRACT_ADDRESS}`);

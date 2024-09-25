@@ -9,6 +9,7 @@ import {
 } from "../deploy/utils";
 import { calcProof, calculatePublicSignals, hashToken } from "../utils/index";
 import { Wallet, Contract, Provider } from "zksync-ethers";
+import { ZeroAddress } from "ethers";
 
 const ZERO_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -73,11 +74,13 @@ describe("redpacket", function () {
     ifrandom,
     hashLock = ZERO_BYTES32,
     duration = 1 * 24 * 60 * 60,
-    message = "some message"
+    message = "some message",
+    token_type = 1, // 0 eth, 1 erc20
   ) {
     const name = "Redpacket Name";
     const total_tokens = parseUnits(totalAmount, 18);
     const ownerAddress = (await owner.getAddress()) as `0x${string}`;
+    const tokenAddr = token_type === 1 ? erc20.target : ZeroAddress;
     const redpacketId = keccak256(
       encodePacked(["address", "string"], [ownerAddress, message])
     );
@@ -94,9 +97,12 @@ describe("redpacket", function () {
         duration, // 1day
         message, // message
         name,
-        1, // token_type
-        erc20.target,
-        total_tokens
+        token_type,
+        tokenAddr,
+        total_tokens,
+        {
+          value: token_type === 1 ? 0n: total_tokens,
+        }
       )
     )
       .to.emit(redPacket, "CreationSuccess")
@@ -107,7 +113,7 @@ describe("redpacket", function () {
         message,
         owner.address,
         creation_time,
-        erc20.target,
+        tokenAddr,
         3,
         ifrandom,
         duration,
@@ -208,8 +214,9 @@ describe("redpacket", function () {
           "message", // message
           "Redpacket Name",
           0, // token_type
-          erc20.target,
-          parseUnits("3", 18) // total_tokens
+          ZeroAddress,
+          parseUnits("3", 18), // total_tokens
+          { value: parseUnits("2", 18)}
         )
       ).to.rejectedWith("No enough ETH");
 
@@ -277,6 +284,60 @@ describe("redpacket", function () {
           .claimOrdinaryRedpacket(redpacketId, merkleProof);
         const afterBalance = await erc20.balanceOf(user.address);
         expect(afterBalance - beforeBalance).to.equal(total_tokens / 3n);
+
+        await expect(
+          redPacket
+            .connect(user)
+            .claimOrdinaryRedpacket(redpacketId, merkleProof)
+        ).to.rejectedWith(user !== bob ? "Already claimed" : "Out of stock");
+      }
+    });
+
+    it("claimOrdinaryRedpacket(ETH): Should all member could claim.", async () => {
+      const duration = 1 * 24 * 60 * 60;
+      const { redpacketId, total_tokens } = await createRedpacket(
+        "300",
+        false,
+        ZERO_BYTES32,
+        duration,
+        `some message`,
+        0,
+      );
+
+      const snapshotId = await provider.send("evm_snapshot", []);
+
+      let merkleProof;
+
+      merkleProof = merkleTree.getHexProof(hashToken(owner.address));
+
+      await provider.send("evm_increaseTime", [duration]);
+      await expect(
+        redPacket
+          .connect(owner)
+          .claimOrdinaryRedpacket(redpacketId, merkleProof)
+      ).to.rejectedWith("Expired");
+      await provider.send("evm_revert", [snapshotId]);
+
+      merkleProof = merkleTree.getHexProof(hashToken(alice.address));
+      await expect(
+        redPacket
+          .connect(owner)
+          .claimOrdinaryRedpacket(redpacketId, merkleProof)
+      ).to.rejectedWith("Verification failed, forbidden");
+
+      for (let user of [owner, alice, bob]) {
+        const beforeBalance = await provider.getBalance(user.address);
+        merkleProof = merkleTree.getHexProof(hashToken(user.address));
+        const { hash: txHash } = await redPacket
+          .connect(user)
+          .claimOrdinaryRedpacket(redpacketId, merkleProof);
+        const txReceipt = await provider.getTransactionReceipt(txHash);
+        let gasFee = 0n;
+        if (txReceipt) {
+          gasFee = txReceipt.gasUsed * txReceipt.gasPrice;
+        }
+        const afterBalance = await provider.getBalance(user.address);
+        expect(afterBalance - beforeBalance + gasFee).to.equal(total_tokens / 3n);
 
         await expect(
           redPacket
