@@ -81,9 +81,96 @@
   b. 转账
   c. 发送 event，便于链下跟踪相关数据
 
-## how to use zksnark.js
+## how to use circom and snark.js
+
+由于 zk-SNARK 原理非常复杂且难懂，很难快速向您解释其底层原理，这里将简单介绍两种工具的使用流程，以及每一条命令后做了什么事情。掌握这些步骤即可搭建简单的 zk 应用，当然还是强烈建议您深入了解其原理，领略 ZK 的魅力，推荐 ret 老师在我们开源大学分享的 [zk-SNARK 系列课程](https://www.youtube.com/watch?v=9Wn5MC3hslQ)。
+
+- `circom` 用于编写电路的文件格式，同时 circom 可执行文件提供了将电路文件编译为 二进制 `wasm` 文件的方法，即从高级语言编译到低级语言
+- `snarkjs` 遵循 zk-SNARK 协议，根据电路生成证明以及验证的工具库
 
 ![circom_and_snarkjs.webp](./docs/img/circom_and_snarkjs.webp)
+
+上图所描述的过程：
+
+1. 编写电路（使用 `.circom` 文件）
+2. 将电路编译成二进制文件 `.wasm`
+3. 生成 witness 文件
+  a. witness 可以近似的理解为结合 input 输入 和 算数电路约束的一种数据形式
+  b. 在 zk 红包的开发中，我们不会使用 witness 文件，而是借助 `verification_key`, `.zkey` 文件，直接使用js脚本生成 proof
+4. 进行 trust setup（信任仪式）生成 `.ptau` 文件，进而生成 `.zkey` 文件；然后根据 `.zkey` 以及 `.wasm` 文件，以及 input 输入 生成 proof；
+  a. `.ptau` 文件不要暴露，建议在完成trust setup 步骤后删除，如果暴露，则会面临被攻击的风险
+  b. `.zkey` 文件包含电路的证明密钥（proving key）和验证密钥（verification key）
+5. 验证 zk proof (该图版本较老，命令有所差异)
+
+上述过程是使用命令行进行生成 proof 以及验证的过程，而我们开发的红包应用则需要将验证阶段放到链上，snarkjs 提供了一个非常好用的命令，帮助我们自动生成 `verifier.sol` 合约。
+
+```sh
+npx snarkjs zkey export solidityverifier circuit_final.zkey contracts/redpacket/verifier.sol
+```
+
+得到合约文件后，我们只需要将其部署到链上，调用其验证接口，就能实现链上 zk proof 验证。
+
+另外我们还需要将 verfication_key 导出为 json 文件，方便脚本调用
+
+```sh
+# Export the verification key
+npx snarkjs zkey export verificationkey circuit_final.zkey verification_key.json
+```
+
+verifier 合约是一个非常复杂的合约，充斥着大量的"魔法数字"以及难以理解的 `assembly` 代码, 简单来说它的功能是使用 `verification_key` 来验证 zk proof。对比这些数字，不难发现合约中的 verfication key 和我们导出的 json 文件是一致的。
+
+```solidity
+// verifier.sol
+contract Groth16Verifier {
+    ...
+    // Verification Key data
+    uint256 constant alphax  = 19697311613983860786212999493703568908688055110191172310826512624877065310240;
+    uint256 constant alphay  = 15269637490765963877960429824285449706379884451647116762156513512057908209004;
+    uint256 constant betax1  = 20296311323050859114464236566100939242060256604420178663056396770577093522106;
+    uint256 constant betax2  = 13493524922581187257154998994913263575067438443058928748339785154227743480315;
+
+    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB, uint[2] calldata _pC, uint[1] calldata _pubSignals) public view returns (bool) {
+      ...
+    }
+}
+```
+
+```json
+// verification_key.json
+{
+ ...
+ "vk_alpha_1": [
+  "19697311613983860786212999493703568908688055110191172310826512624877065310240",
+  "15269637490765963877960429824285449706379884451647116762156513512057908209004",
+  "1"
+ ],
+ "vk_beta_2": [
+  [
+   "13493524922581187257154998994913263575067438443058928748339785154227743480315",
+   "20296311323050859114464236566100939242060256604420178663056396770577093522106"
+  ],
+  [
+   "20523082812265072401230822370196284808250923800479258640050610593596972848609",
+   "14567830741370033739684300122126422233548108646784945873266980459071562511739"
+  ],
+  ...
+}
+```
+
+在js脚本生成 proof 的过程中，我们可以直接使用 `groth16.fullProve` 函数来生成 proof，不用运行命令行命令。
+
+```ts
+import { groth16 } from "snarkjs";
+...
+export const calcProof = async (input: string) => {
+  const proveRes = await groth16.fullProve(
+    { in: keccak256(toHex(input)) },
+    path.join(__dirname, "../datahash_js/datahash.wasm"),
+    path.join(__dirname, "../circuit_final.zkey")
+  );
+  ...
+}
+```
 
 ## 核心代码实现
 
@@ -598,7 +685,7 @@ npx snarkjs powersoftau beacon pot14_0002.ptau pot14_beacon.ptau 010203040506070
 # 这一步耗时较长
 npx snarkjs powersoftau prepare phase2 pot14_beacon.ptau pot14_final.ptau -v
 
-#
+# 生成最终的 ptau 文件
 npx snarkjs powersoftau verify pot14_final.ptau
 ```
 
