@@ -60,7 +60,7 @@ export default async function () {
 
   if (allowanceRes < tokenAmount) {
     let approveRes = await testToken.approve(redPacketAddress, MaxUint256);
-    console.log(`approve tx res`, approveRes);
+    console.log(`Approve tx hash`, approveRes.hash);
   }
 
   // Run contract read function
@@ -129,7 +129,7 @@ export default async function () {
       redpacketID = id;
 
       console.log(
-        `CreationSuccess Event, total: ${total.toString()}\tRedpacketId: ${id}  `,
+        `\nCreationSuccess Event, total: ${total.toString()}\tRedpacketId: ${id} \n`,
       );
       console.log(`lock: ${hash_lock}`);
     } else {
@@ -164,11 +164,11 @@ export default async function () {
     }
 
     const createRedPacketRecipt = await claimTx.wait();
-    console.log("createRedPacketRecipt", createRedPacketRecipt);
+    // console.log("createRedPacketRecipt", createRedPacketRecipt);
 
     const balanceAfter = await testToken.balanceOf(user.address);
     console.log(
-      `user ${user.address} has claimd ${balanceAfter - balanceBefore}`,
+      `\nuser ${user.address} has claimd ${balanceAfter - balanceBefore}\n`,
     );
   }
 

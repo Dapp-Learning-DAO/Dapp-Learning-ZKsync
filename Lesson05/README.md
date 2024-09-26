@@ -629,6 +629,7 @@ export const calculatePublicSignals = async (input: string) => {
 
 - 将密码作为电路的输入 `in` 字段，依赖 wasm 和 zkey 文件生成 proof
 - 验证生成的 proof 是否能通过
+- 对proof结果进行重排（因为 `groth16.exportSolidityCallData` 函数输出的结果与vierifer的接口参数顺序不一样）
 
 ```ts
 import { encodePacked, keccak256, parseEther, toHex } from "viem";
@@ -696,13 +697,13 @@ npx snarkjs powersoftau contribute pot14_0001.ptau pot14_0002.ptau --name="Secon
 
 # Apply a random beacon
 # 数字是 32 bytes 的随机数字
-npx snarkjs powersoftau beacon pot14_0002.ptau pot14_beacon.ptau 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 10 -n="Final Beacon"
+npx snarkjs powersoftau beacon pot14_0002.ptau pot14_beacon.ptau 0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f 10 -n="Final Beacon" -v
 
-# Prepare phase 2
+# Prepare phase 2 生成最终的 ptau 文件
 # 这一步耗时较长
 npx snarkjs powersoftau prepare phase2 pot14_beacon.ptau pot14_final.ptau -v
 
-# 生成最终的 ptau 文件
+# 验证 ptau 文件是否有效
 npx snarkjs powersoftau verify pot14_final.ptau
 ```
 
