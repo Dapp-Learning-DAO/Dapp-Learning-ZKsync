@@ -102,7 +102,19 @@
   b. `.zkey` 文件包含电路的证明密钥（proving key）和验证密钥（verification key）
 5. 验证 zk proof (该图版本较老，命令有所差异)
 
-上述过程是使用命令行进行生成 proof 以及验证的过程，而我们开发的红包应用则需要将验证阶段放到链上，snarkjs 提供了一个非常好用的命令，帮助我们自动生成 `verifier.sol` 合约。
+### 红包电路设计
+
+我们的目的是让用户在不暴露密码的情况，证明密码正确。通常电路的 input 可以是 `private`,  output 是 public。所以我们的电路的 output 不能输出明文密码，那么一个单向的hash函数可以很好的满足这个需求。
+
+也就是说，我们需要设计一个电路，约束一个hash运算，prover 可以隐藏自己的明文密码输入，但是输出是密码的hash，这个hash可以公开，保存在链上，以便验证者核对检查。
+
+`password(private) -> hash function(circuit) -> hash(public)`
+
+由于 hash 函数的单向性质，攻击者很难从hash还原到原象（明文密码）；同时我们使用电路约束了hash计算过程的正确性，那么当prover提供了一个的proof，证明了计算过程合法，且输出的hash与链上保存一致，我们就能认为prover是知道正确密码的。
+
+### verifier 合约
+
+上述图片过程是使用命令行进行生成 proof 以及验证的过程，而我们开发的红包应用则需要将验证阶段放到链上，snarkjs 提供了一个非常好用的命令，帮助我们自动生成 `verifier.sol` 合约。
 
 ```sh
 npx snarkjs zkey export solidityverifier circuit_final.zkey contracts/redpacket/verifier.sol
