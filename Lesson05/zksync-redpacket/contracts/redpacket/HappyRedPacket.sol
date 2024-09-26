@@ -20,7 +20,7 @@ contract HappyRedPacket is Initializable {
 
     struct Packed {
         uint256 packed1; // 0 (128) total_tokens (96) expire_time(32)
-        uint256 packed2; // 0 (64) token_addr (160) claimed_numbers(15)  token_type(1) ifrandom(1)
+        uint256 packed2; // 0 (64) token_addr (160) numbers(15)  token_type(1) ifrandom(1)
     }
 
     event CreationSuccess(

@@ -15,16 +15,19 @@
 
 接下来我们考虑如何设计红包合约，以满足上述需求。
 
-- 红包创建者可以设置白名单。显然将白名单完整的保存于链上是不现实的，这将会带来大量的gas消耗，一种通用的方案就是使用 [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree)。
+- 红包创建者可以设置白名单。显然将白名单完整的保存于链上是不现实的，这将会带来大量的 gas 消耗，一种通用的方案就是使用 [Merkle Tree](https://en.wikipedia.org/wiki/Merkle_tree)。
   - 链上只需要保存 Merkle Root，用户领取红包时，需要根据完整的白名单地址列表，生成 Merkle Proof
-  - 由于生成proof需要完整的地址列表，所以我们需要额外的为用户保存这些列表，例如结合后端数据库，或者使用 IPFS 去中心化存储
+  - 由于生成 proof 需要完整的地址列表，所以我们需要额外的为用户保存这些列表，例如结合后端数据库，或者使用 IPFS 去中心化存储
 - 支持随机金额。实际上是需要链上生成随机数来随机划分金额。
-  - 可以简单的使用 `block.timestamp`, `msg.sender`, `nonce`, 随机种子等字段进行打包hash，然后转换为数字
+  - 可以简单的使用 `block.timestamp`, `msg.sender`, `nonce`, 随机种子等字段进行打包 hash，然后转换为数字
   - 或者使用 Chainlink 的链上随机数服务（有一定使用成本）
 - 支持红包密码功能。如果我们希望实现类似口令红包的功能，用户只有在输入正确密码的情况下才能领取，那么在智能合约中实现最大的难点在于如何隐藏明文密码。
-  - 使用 ZK snark 技术，设计一个简单的电路，即将明文密码进行一次hash运算，用户在领取时，提供这个hash运算过程的 ZK proof证明
-  - 由于明文密码已经经过hash运算，公开的 zk 电路输出只是一个hash值，不会暴露明文密码
-  - 而 ZK snark 技术保证了用户进行hash的原象是正确的密码
+  - 使用 ZK snark 技术，设计一个简单的电路，即将明文密码进行一次 hash 运算，用户在领取时，提供这个 hash 运算过程的 ZK proof 证明
+  - 由于明文密码已经经过 hash 运算，公开的 zk 电路输出只是一个 hash 值，不会暴露明文密码
+  - 而 ZK snark 技术保证了用户进行 hash 的原象是正确的密码
+
+> IPFS 存储白名单的方案，可以参考红包项目的开源代码版本 [dapp-learning-app](https://github.com/Dapp-Learning-DAO/dapp-learning-app/blob/main/src/hooks/useRedpacketsLists.ts#L199)；
+> 主要流程是根据先将完整的白名单上传 IPFS，然后将 cid 塞入创建红包的自定义信息中；而领取时，解析自定义信息中的 cid 部分，去 ipfs 获取完整的白名单列表；另外没有后端的辅助，红包列表需要完全依靠前端配合 subgraph 获取，这个过程耗时较长，可以放到 `webworker` 中进行.
 
 ### 流程梳理
 
@@ -32,54 +35,56 @@
 
 我们继续梳理整个流程：
 
-1. 初始化红包合约
-  a. 设置随机种子，用于随机红包的随机数生成
-  b. 设置 ZK snark 的 verifier 合约地址（稍后会解释用途）
-2. 创建红包的准备阶段
-  a. 在调用合约创建接口之前，创建者还需要在链下进行一些计算：
+- 初始化红包合约
+  - 设置随机种子，用于随机红包的随机数生成
+  - 设置 ZK snark 的 verifier 合约地址（稍后会解释用途）
+
+- 创建红包的准备阶段
+  - 在调用合约创建接口之前，创建者还需要在链下进行一些计算：
     - 根据白名单地址列表生成 merkle tree，拿到 merkle root
-    - 如果将创建密码红包，需要计算密码的hash值，**注意：这里必须使用和 zk 电路一致的hash方法，且需要 `zk-friendly`, 比如 `Poseidon Hash`**
-    - 如果不设置密码，`lock` 字段直接传零值
-  b. 保存白名单列表，一种方法是传给后端数据库，一种方法是保存在去中心化存储中，例如 IPFS
-  c. 如果红包奖励的是ERC20 token，需要先进行 approve 授权操作
-3. 创建红包
-  a. 调用红包创建接口，传入相关参数
-  b. 红包合约的 nonce + 1
-  c. 根据 `msg.sender` + `message` (自定义消息，一般为时间戳) 进行hash，作为新红包的id
-  d. 合约进行条件检查
+    - 如果将创建密码红包，需要计算密码的 hash 值，**注意：这里必须使用和 zk 电路一致的 hash 方法，且需要 `zk-friendly`, 比如 `Poseidon Hash`**
+  - 如果不设置密码，`lock` 字段直接传零值
+  - 保存白名单列表，一种方法是传给后端数据库，一种方法是保存在去中心化存储中，例如 IPFS
+  - 如果红包奖励的是 ERC20 token，需要先进行 approve 授权操作
+- 创建红包
+  - 调用红包创建接口，传入相关参数
+  - 红包合约的 nonce + 1
+  - 根据 `msg.sender` + `message` (自定义消息，一般为时间戳) 进行 hash，作为新红包的 id
+  - 合约进行条件检查
     - 可领取人数检查，至少大于 0，且不能超过上限
     - token_type 检查，0 为 ETH，1 为 ERC20 token，不允许其他值
-    - 保证每个领取者领取的金额有一个下限（比如0.1），避免因随机生产的过于极端的金额，即 `总金额 / 数量 >= 0.1`
-    - 检查新红包id没有重复
-  e. 转入 ETH 或者 ERC20 token ，检查合约余额变化，转账金额是否足够
-  f. 发送 event，便于链下跟踪相关数据
-4. 领取红包准备阶段
-  a. 是否为密码红包
+    - 保证每个领取者领取的金额有一个下限（比如 0.1），避免因随机生产的过于极端的金额，即 `总金额 / 数量 >= 0.1`
+    - 检查新红包 id 没有重复
+  - 转入 ETH 或者 ERC20 token ，检查合约余额变化，转账金额是否足够
+  - 保存红包数据
+  - 发送 event，便于链下跟踪相关数据
+- 领取红包准备阶段
+  - 是否为密码红包
     - 是，需要额外生成 ZK proof
     - 否，跳过
-  b. 获取完整的白名单地址列表，生成自己的 merkle proof
-5. 领取红包, 这里区分为两个接口，一个普通红包领取，不需要传入 zk proof，另一个密码红包领取，需要 zk proof
-  a. 是否为密码红包
+  - 获取完整的白名单地址列表，生成自己的 merkle proof
+- 领取红包, 这里区分为两个接口，一个普通红包领取，不需要传入 zk proof，另一个密码红包领取，需要 zk proof
+  - 是否为密码红包
     - 是，调用 `claimPasswordRedpacket`, 大部分流程与普通红包一样，但是会先调用 zk 相关的验证方法 `Groth16Verifier.verifyProof()`
     - 否，调用 `claimOrdinaryRedpacket`
-  b. 条件检查
+  - 条件检查
     - 红包是否已过期，过期无法领取
     - 已领取的人数小于总可领取人数，即可领取人数满后，不能领取
     - 验证 merkle proof，即领取者是否在白名单列表中
     - 领取者尚未领取该红包
-  c. 是否为随机金额红包
+  - 是否为随机金额红包
     - 是，计算随机数，进而得到随机金额，且不低于领取下限
     - 否，直接均分金额
-  d. 存储领取者的地址以及金额
-  e. 转账
-  f. 发送 event，便于链下跟踪相关数据
-6. 过期红包的金额赎回
-  a. 条件检查
+  - 存储领取者的地址以及金额
+  - 转账
+  - 发送 event，便于链下跟踪相关数据
+- 过期红包的金额赎回
+  - 条件检查
     - 是否为创建者
     - 该红包是否已经过期
     - 红包仍有金额（没有领取完）
-  b. 转账
-  c. 发送 event，便于链下跟踪相关数据
+  - 转账
+  - 发送 event，便于链下跟踪相关数据
 
 ## how to use circom and snark.js
 
@@ -92,25 +97,25 @@
 
 上图所描述的过程：
 
-1. 编写电路（使用 `.circom` 文件）
-2. 将电路编译成二进制文件 `.wasm`
-3. 生成 witness 文件
-  a. witness 可以近似的理解为结合 input 输入 和 算数电路约束的一种数据形式
-  b. 在 zk 红包的开发中，我们不会使用 witness 文件，而是借助 `verification_key`, `.zkey` 文件，直接使用js脚本生成 proof
-4. 进行 trust setup（信任仪式）生成 `.ptau` 文件，进而生成 `.zkey` 文件；然后根据 `.zkey` 以及 `.wasm` 文件，以及 input 输入 生成 proof；
-  a. `.ptau` 文件不要暴露，建议在完成trust setup 步骤后删除，如果暴露，则会面临被攻击的风险
-  b. `.zkey` 文件包含电路的证明密钥（proving key）和验证密钥（verification key）
-5. 验证 zk proof (该图版本较老，命令有所差异)
+- 编写电路（使用 `.circom` 文件）
+- 将电路编译成二进制文件 `.wasm`
+- 生成 witness 文件
+  - witness 可以近似的理解为结合 input 输入 和 算数电路约束的一种数据形式
+  - 在 zk 红包的开发中，我们不会使用 witness 文件，而是借助 `verification_key`, `.zkey` 文件，直接使用 js 脚本生成 proof
+- 进行 trusted setup（信任仪式）生成 `.ptau` 文件，进而生成 `.zkey` 文件；然后根据 `.zkey` 以及 `.wasm` 文件，以及 input 输入 生成 proof；
+  - `.ptau` 文件不要暴露，建议在完成 trusted setup 步骤后删除，如果暴露，则会面临被攻击的风险
+  - `.zkey` 文件包含电路的证明密钥（proving key）和验证密钥（verification key）
+- 验证 zk proof (该图版本较老，命令有所差异)
 
 ### 红包电路设计
 
-我们的目的是让用户在不暴露密码的情况，证明密码正确。通常电路的 input 可以是 `private`,  output 是 public。所以我们的电路的 output 不能输出明文密码，那么一个单向的hash函数可以很好的满足这个需求。
+我们的目的是让用户在不暴露密码的情况，证明密码正确。通常电路的 input 可以是 `private`, output 是 public。所以我们的电路的 output 不能输出明文密码，那么一个单向的 hash 函数可以很好的满足这个需求。
 
-也就是说，我们需要设计一个电路，约束一个hash运算，prover 可以隐藏自己的明文密码输入，但是输出是密码的hash，这个hash可以公开，保存在链上，以便验证者核对检查。
+也就是说，我们需要设计一个电路，约束一个 hash 运算，prover 可以隐藏自己的明文密码输入，但是输出是密码的 hash，这个 hash 可以公开，保存在链上，以便验证者核对检查。
 
 `password(private) -> hash function(circuit) -> hash(public)`
 
-由于 hash 函数的单向性质，攻击者很难从hash还原到原象（明文密码）；同时我们使用电路约束了hash计算过程的正确性，那么当prover提供了一个的proof，证明了计算过程合法，且输出的hash与链上保存一致，我们就能认为prover是知道正确密码的。
+由于 hash 函数的单向性质，攻击者很难从 hash 还原到原象（明文密码）；同时我们使用电路约束了 hash 计算过程的正确性，那么当 prover 提供了一个的 proof，证明了计算过程合法，且输出的 hash 与链上保存一致，我们就能认为 prover 是知道正确密码的。
 
 ### verifier 合约
 
@@ -169,7 +174,7 @@ contract Groth16Verifier {
 }
 ```
 
-在js脚本生成 proof 的过程中，我们可以直接使用 `groth16.fullProve` 函数来生成 proof，不用运行命令行命令。
+在 js 脚本生成 proof 的过程中，我们可以直接使用 `groth16.fullProve` 函数来生成 proof，不用运行命令行命令。
 
 ```ts
 import { groth16 } from "snarkjs";
@@ -190,7 +195,7 @@ export const calcProof = async (input: string) => {
 
 为了实现 zk 验证密码，我们需要编写一个简单的 circom 电路。
 
-> circom的基本语法比较简单，可以参考 [circom 官方文档](https://docs.circom.io/getting-started)
+> circom 的基本语法比较简单，可以参考 [circom 官方文档](https://docs.circom.io/getting-started)
 
 这个电路约束了一个简单的 Poseidon hash 的运算过程，prover 将通过这个电路，证明他的 hash 结果是按照规则计算得出，而计算结果将与链上保存的 hash lock 值比较，如果一致，说明 prover 输入了正确的密码。
 
@@ -219,13 +224,17 @@ component main = PoseidonHasher();
 
 字段说明：
 
-- `packed` 合并存储一些长度较短的数据，节省gas
+- `packed` 合并存储一些长度较短的数据，节省 gas
   - `total_tokens` 总金额
   - `expire_time` 红包过期的时间戳
   - `token_addr` ERC20 token 的地址, ETH 则可以输入零地址
-  - `claimed_numbers` 已经领取的人数
+  - `numbers` 可领取红包的最大人数
   - `token_type` 0 为 ETH 红包，1 为 ERC20 token 红包
   - `ifrandom` true 为随机金额， false 为平均分配金额
+- `claimed_list`: 已领取的地址列表
+- `merkleroot`: merkle root
+- `lock`: hash lock 在密码红包时用到
+- `creator`: 创建者地址
 
 ```solidity
 struct RedPacket {
@@ -237,7 +246,7 @@ struct RedPacket {
 }
 struct Packed {
     uint256 packed1; // 0 (128) total_tokens (96) expire_time(32)
-    uint256 packed2; // 0 (64) token_addr (160) claimed_numbers(15)  token_type(1) ifrandom(1)
+    uint256 packed2; // 0 (64) token_addr (160) numbers(15)  token_type(1) ifrandom(1)
 }
 
 mapping(bytes32 => RedPacket) public redpacket_by_id;
@@ -270,13 +279,13 @@ function create_red_packet(
             );
             require(msg.value >= _total_tokens, "No enough ETH");
     } else if (_token_type == 1) {
-        
+
         IERC20(_token_addr).safeTransferFrom(
             msg.sender,
             address(this),
             _total_tokens
         );
-        
+
         received_amount = balance_after_transfer - balance_before_transfer;
         require(received_amount >= _total_tokens, "#received > #packets");
     }
@@ -289,7 +298,7 @@ function create_red_packet(
 
 #### claim
 
-claim 根据红包是否设置密码，分为两个接口，主要区别在于有密码需要额外传入 ZK proof，即三个二维数组 `pa`, `pb`, `pc`, 且需要调用外部合约 Verifier 的验证方法，进行ZK验证。
+claim 根据红包是否设置密码，分为两个接口，主要区别在于有密码需要额外传入 ZK proof，即三个二维数组 `pa`, `pb`, `pc`, 且需要调用外部合约 Verifier 的验证方法，进行 ZK 验证。
 
 ```solidity
 function claimOrdinaryRedpacket(
@@ -326,18 +335,18 @@ function claimPasswordRedpacket(
 
 claim 内部函数的核心逻辑代码实现:
 
-1. 检查红包是否过期
-2. 检查 Merkle proof
-3. 根据是否为随机红包，来计算领取金额
-  a. 是
+- 检查红包是否过期
+- 检查 Merkle proof
+- 根据是否为随机红包，来计算领取金额
+  - 是
     - 如果仅剩一个未领取的红包，则直接将所剩余额都给予最后一位领取者
     - 计算随机金额，需要扣除剩余的最低金额，再进行随机
-  b. 否
+  - 否
     - 如果仅剩一个未领取的红包，则直接将所剩余额都给予最后一位领取者
     - 均分金额
-4. 检查用户是否已经领取过该红包
-5. 转账
-6. 发送 event
+- 检查用户是否已经领取过该红包
+- 转账
+- 发送 event
 
 ```solidity
 function _claim(
@@ -388,7 +397,7 @@ function _claim(
     // save data to redpacket_by_id[id]
 
     // send event
-    
+
 }
 ```
 
@@ -396,10 +405,10 @@ function _claim(
 
 如果红包已经过期，且金额还没领取完，创建者可以调用 `refund` 赎回未领取的金额。
 
-1. 检查是否为红包创建者
-2. 检查是否已过期
-3. 将剩余的 ETH / ERC20 转给创建者
-4. 发送 event
+- 检查是否为红包创建者
+- 检查是否已过期
+- 将剩余的 ETH / ERC20 转给创建者
+- 发送 event
 
 ```solidity
 function refund(bytes32 id) public {
@@ -428,10 +437,10 @@ function refund(bytes32 id) public {
 
 #### 部署
 
-1. 部署红包合约
-2. 部署 Groth16Verifier 合约（该合约通过 snarkjs 结合电路文件生成，详细过程会在下面讲解）
-3. 红包合约初始化，将 Groth16Verifier 合约地址传入
-4. 保存合约地址到 json 文件
+- 部署红包合约
+- 部署 Groth16Verifier 合约（该合约通过 snarkjs 结合电路文件生成，详细过程会在下面讲解）
+- 红包合约初始化，将 Groth16Verifier 合约地址传入
+- 保存合约地址到 json 文件
 
 ```ts
 import { deployContract, saveDeployment } from "./utils";
@@ -458,16 +467,16 @@ export default async function () {
 
 #### 交互脚本
 
-1. 读取红包合约部署地址，初始化红包合约实例
-2. 初始化测试 token 实例
-3. approve 授权操作
-4. 根据白名单生成 Merkle Tree， 这里使用 `merkletreejs` 依赖.
-  a. 需要将 address 先进行 hash 再作为 Merkle Tree 的叶子节点
-5. hashlock 字段
-  a. 如果没有设置密码，直接传 `BYTES_ZERO`
-  b. 如果有设置密码，需要使用 `Poseidon Hash` 对明文密码进行hash，作为 hash lock 值
-6. 创建红包
-7. 领取红包
+- 读取红包合约部署地址，初始化红包合约实例
+- 初始化测试 token 实例
+- approve 授权操作
+- 根据白名单生成 Merkle Tree， 这里使用 `merkletreejs` 依赖.
+  - 需要将 address 先进行 hash 再作为 Merkle Tree 的叶子节点
+- hashlock 字段
+  - 如果没有设置密码，直接传 `BYTES_ZERO`
+  - 如果有设置密码，需要使用 `Poseidon Hash` 对明文密码进行 hash，作为 hash lock 值
+- 创建红包
+- 领取红包
 
 ```ts
 import MerkleTree from "merkletreejs";
@@ -520,7 +529,7 @@ export default async function () {
 }
 ```
 
-创建红包, 发出创建红包的交易后，会监听交易回执，解析其中的event参数，将红包 id 打印出来
+创建红包, 发出创建红包的交易后，会监听交易回执，解析其中的 event 参数，将红包 id 打印出来
 
 ```ts
 async function createRedpacket() {
@@ -591,10 +600,7 @@ async function cliamRedPacket(user) {
         .catch((err) => console.error(err));
     }
   } else {
-    claimTx = await redPacket.claimOrdinaryRedpacket(
-      redpacketID,
-      merkleProof,
-    );
+    claimTx = await redPacket.claimOrdinaryRedpacket(redpacketID, merkleProof);
   }
 
   const createRedPacketRecipt = await claimTx.wait();
@@ -602,7 +608,7 @@ async function cliamRedPacket(user) {
 
   const balanceAfter = await testToken.balanceOf(user.address);
   console.log(
-    `user ${user.address} has claimd ${balanceAfter - balanceBefore}`,
+    `user ${user.address} has claimd ${balanceAfter - balanceBefore}`
   );
 }
 ```
@@ -622,7 +628,7 @@ export const calculatePublicSignals = async (input: string) => {
 `calcProof` 计算 zk proof
 
 - 将密码作为电路的输入 `in` 字段，依赖 wasm 和 zkey 文件生成 proof
-- 验证生成的proof是否能通过
+- 验证生成的 proof 是否能通过
 
 ```ts
 import { encodePacked, keccak256, parseEther, toHex } from "viem";
@@ -661,7 +667,6 @@ export const calcProof = async (input: string) => {
 };
 ```
 
-
 ## 测试,部署,交互
 
 ### 安装依赖
@@ -678,7 +683,7 @@ npm install -g snarkjs@latest
 yarn install
 ```
 
-### `snarkjs trust setup` 阶段
+### `snarkjs trusted setup` 阶段
 
 - 生成 ptau 文件。**注意：ptau 文件不要公开，如果泄露 ZK 电路会有被攻击的风险，可以在完成 setup 阶段后删除 ptau 文件**.
 
@@ -723,13 +728,13 @@ component main = PoseidonHasher();
 - 编译电路
 
   - 这一步会在 `datahash_js` 文件夹下生成三个文件: `datahash.wasm`, `generate_witness.js`, `witness_calculator.js`, 用于后续生成证明
-  - 以及 `datahash.r1cs` 和 `dahash.sym` 文件，用于完成 trust setup 的第二阶段
+  - 以及 `datahash.r1cs` 和 `dahash.sym` 文件，用于完成 trusted setup 的第二阶段
 
 ```sh
 circom circuits/datahash.circom --r1cs --wasm --sym
 ```
 
-- trust setup 第二阶段，生成 zkey 文件
+- trusted setup 第二阶段，生成 zkey 文件
 
 ```sh
 # Groth16 requires a trusted ceremony for each circuit.
@@ -749,7 +754,7 @@ npx snarkjs zkey export verificationkey circuit_final.zkey verification_key.json
 
 ### 生成 `verifier.sol`
 
-trust setup 完成后，我们需要利用snarkjs自动生成 `verifier.sol` 文件，辅助红包合约进行链上的zksnark验证。
+trusted setup 完成后，我们需要利用 snarkjs 自动生成 `verifier.sol` 文件，辅助红包合约进行链上的 zksnark 验证。
 
 ```sh
 npx snarkjs zkey export solidityverifier circuit_final.zkey contracts/redpacket/verifier.sol
@@ -810,7 +815,7 @@ Wallet address: 0x67a6Ba1b418911EB67AF4E2DfEF80aCBe2cCE0b6
 allowance: 115792089237316195423570985008687907853269984665640564039457.584007913129639935
 Redpacket Nonce: 3n
 merkleTree Root: 0xa49ea2b86a72603f37d4eee7d52b4b0c85fd23e5605603ad82b7dc10d48fd2c5
-CreationSuccess Event, total: 1000000000000000000       RedpacketId: 0x945f7018e48934dc180db1a25b1ef14b2ef2b33eb03f6d5806b7ac084648d8fe  
+CreationSuccess Event, total: 1000000000000000000       RedpacketId: 0x945f7018e48934dc180db1a25b1ef14b2ef2b33eb03f6d5806b7ac084648d8fe
 lock: 0x22abfb84e37f8a8623a6486a1158311ed0a25038730b70d9312df8112c4a7e22
 Create Red Packet successfully
 createRedPacketRecipt ContractTransactionReceipt {
@@ -835,3 +840,8 @@ createRedPacketRecipt ContractTransactionReceipt {
 user 0x67a6Ba1b418911EB67AF4E2DfEF80aCBe2cCE0b6 has claimd 700000000000000000
 ```
 
+## Reference
+
+- [ZKsync Era Doc](https://docs.ZKsync.io/)
+- [dapp-learning website-smart-contract](https://github.com/Dapp-Learning-DAO/Official-website-smart-contract)
+- [dapp-learning-app](https://github.com/Dapp-Learning-DAO/dapp-learning-app)

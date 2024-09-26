@@ -53,7 +53,9 @@
 
 ### Lesson 5: DApp 部署 2
 
-- **ZK red packet**: 如何在 ZKsync Era 上部署 ZK Redpacket (front-end + contracts).
+- **ZK red packet**: 如何在 ZKsync Era 上部署 ZK Redpacket (contracts + scripts).
+
+[video]() | [Doc](./Lesson05/README.md)
 
 ### Lesson 6: DApp 部署 3
 
