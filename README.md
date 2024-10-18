@@ -41,24 +41,47 @@
 - **System Contracts**: ZKsync Era 系统合约介绍.
 - **Gas Fee Model**: 解析 ZKsync Era 的 gas 费用机制及其与以太坊的区别.
 - **Differences from Ethereum**: 详解 ZKsync Era 与主网的区别以及开发注意事项.
-- **ZKsync Bridge**: 介绍 ZKsync 桥的工作方式，使用 LayerZero、Celer 网络作为例子.
+- **ZKsync Bridge**: 介绍 ZKsync 桥的工作方式.
+
+[video](https://www.youtube.com/watch?v=yUMCUgTVj5U&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=4) | [Doc](./Lesson03/README.md)
 
 ### Lesson 4: DApp 部署 1
 
 - 如何在 ZKsync Era 上部署 Uniswap V3 (front-end + contracts).
 
+[video](https://www.youtube.com/watch?v=XuBzfrhGReM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=5) | [Doc](./Lesson04/README.md)
+
 ### Lesson 5: DApp 部署 2
 
-- **ZK red packet**: 如何在 ZKsync Era 上部署 ZK Redpacket (front-end + contracts).
+- **ZK red packet**: 如何在 ZKsync Era 上部署 ZK Redpacket (contracts + scripts).
+
+[video]() | [Doc](./Lesson05/README.md)
+
+### Lesson 6: DApp 部署 3
+
 - **rollup bridge**: 如何在 ZKsync Era 上部署 Rollup Bridge.
 
-### Lesson 6: Rollups 原理和 ZKsync Era（选修）
+</br>
+
+**Rollups 原理和 ZKsync Era (选修)**:
+
+### Lesson 7: Boojum 原理 1
 
 - **Boojum**: Boojum 原理 电路算术化
   - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
 - **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。
 
+### Lesson 8: Boojum 原理 2
 
+- **Lookup Argument**: 查找表技术
+
+[video p1](https://www.youtube.com/watch?v=1Jzk1zQA6H4&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=7) | [video p2](https://www.youtube.com/watch?v=XLsbKFysSt4&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=8) | [Doc](./boojum-02/README.md)
+
+### Lesson 9: Boojum 原理 3
+
+- **Boojum 深入**: FFT
+
+[video p1](https://www.youtube.com/watch?v=JAfwbs_Ymnk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=9) | [video p2](https://www.youtube.com/watch?v=BDLOuGmb7mk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=10) | [Doc](./boojum-02/README.md)
 
 ## **Course Overview**
 
@@ -91,24 +114,44 @@
 - **System Contracts**: Introduce the ZKsync Era system contracts.
 - **Gas Fee Model**: Explain the ZKsync Era gas fee mechanism and its difference from Ethereum.
 - **Differences from Ethereum**: Explain the differences from ethereum and development consideration.
-- **ZKsync Bridge**: How ZKsync bridge works, using LayerZero, Celer network as examples.
+
+[video](https://www.youtube.com/watch?v=yUMCUgTVj5U&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=4) | [Doc](./Lesson03/README.md)
 
 ### Lesson 4: DApp Development 1
 
 - How to deploy Uniswap V3 on ZKsync Era (front-end + contracts)
 
+[video](https://www.youtube.com/watch?v=XuBzfrhGReM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=5) | [Doc](./Lesson04/README.md)
+
 ### Lesson 5: DApp Development 2
 
-- **ZK red packet**: Develop a ZK red packet product (contract + frontend) on ZKsync Era.
+- **ZK red packet**: Develop a ZK redpacket on ZKsync Era.
+
+### Lesson 6: DApp Development 3
+
 - **rollup bridge**: How to develop a cross rollup bridge on ZKsync Era.
 
-### Lesson 6: Principles of Rollups and ZKsync Era (Optional)
+</br>
+
+**Principles of Rollups and ZKsync Era (Optional)**:
+
+### Lesson 7: Principles of Boojum 1
 
 - **Boojum**: Technical principles of Boojum, Circuit Arithmetization
-  - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
-- **Plonk and Plonky2**: Technical principles of Plonk and Plonky2 technology.
 
-![poster](./Lesson01/docs/img/zksync-tutorial-poster.png)
+[video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
+
+### Lesson 8: Principles of Boojum 2
+
+- **Lookup Argument**:
+
+[video p1](https://www.youtube.com/watch?v=1Jzk1zQA6H4&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=7) | [video p2](https://www.youtube.com/watch?v=XLsbKFysSt4&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=8) | [Doc](./boojum-02/README.md)
+
+### Lesson 9: Principles of Boojum 3
+
+- **Inside Boojum**: FFT
+
+[video p1](https://www.youtube.com/watch?v=JAfwbs_Ymnk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=9) | [video p2](https://www.youtube.com/watch?v=BDLOuGmb7mk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=10) | [Doc](./boojum-02/README.md)
 
 ## Reference
 
