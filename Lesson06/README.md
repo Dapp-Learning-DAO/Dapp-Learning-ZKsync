@@ -173,26 +173,22 @@ https://jumper.exchange/
 具体跨链代码在 Dapp-Learning 仓库：
 https://github.com/Dapp-Learning-DAO/Dapp-Learning/tree/main/basic/80-crossChainTransfer
 
-参考链接：
-1 深度详解「跨链桥」基础要素、跨链技术与安全性： https://web3caff.com/zh/archives/27356
-2 https://learnblockchain.cn/article/1553
-3 https://cloud.tencent.com/developer/article/1856014
-SPV： https://eprint.iacr.org/2021/1657.pdf
-Zktree: https://eprint.iacr.org/2023/208
-Recursive: https://ethresear.ch/t/reducing-the-verification-cost-of-a-snark-through-hierarchical-aggregation/5128/9
-Navigating Arbitrary Messaging Bridges: A Comparison Framework:
-https://blog.li.fi/navigating-arbitrary-messaging-bridges-a-comparison-framework-8720f302e2aa
-Hop:
-https://blog.li.fi/hop-protocol-a-deep-dive-5075eddc4dd
-https://foresightnews.pro/article/detail/3454
-layer0: https://medium.com/layerzero-official/layerzero-v2-deep-dive-869f93e09850
-跨链资产标准：https://ethereum-magicians.org/t/outlining-a-standard-interface-for-cross-domain-erc20-transfers/6151/2
-https://github.com/hop-exchange/contracts/blob/master/assets/Hop_Transfer_Diagrams.jpg
-https://blog.dodoex.io/%E8%B7%A8%E9%93%BE%E6%BC%AB%E8%B0%88-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%9016%E4%B8%AA%E8%B7%A8%E9%93%BE%E6%96%B9%E6%A1%88%E6%9D%83%E8%A1%A1-a4e98d248eb2
-op and zksync ：
-Op standardBridge:
-https://github.com/ethereum-optimism/optimism/blob/65ec61dde94ffa93342728d324fecf474d228e1f/packages/contracts-bedrock/contracts/universal/StandardBridge.sol
-Standard bridge:
-https://medium.com/onther-tech/fast-withdrawals-in-optimistic-rollups-part-1-6fbb93abf1c3
-Liquidity provider（ fast withdrawal）
-https://medium.com/tokamak-network/fast-withdrawals-in-optimistic-rollups-part-2-db27426d04af
+## 参考链接
+
+- 深度详解「跨链桥」基础要素、跨链技术与安全性： <https://web3caff.com/zh/archives/27356>
+- <https://learnblockchain.cn/article/1553>
+- <https://cloud.tencent.com/developer/article/1856014>
+- SPV： <https://eprint.iacr.org/2021/1657.pdf>
+- Zktree: <https://eprint.iacr.org/2023/208>
+- Recursive: <https://ethresear.ch/t/reducing-the-verification-cost-of-a-snark-through-hierarchical-aggregation/5128/9>
+- Navigating Arbitrary Messaging Bridges: A Comparison Framework: <https://blog.li.fi/navigating-arbitrary-messaging-bridges-a-comparison-framework-8720f302e2aa>
+- Hop: <https://blog.li.fi/hop-protocol-a-deep-dive-5075eddc4dd>
+- <https://foresightnews.pro/article/detail/3454>
+- layer0: <https://medium.com/layerzero-official/layerzero-v2-deep-dive-869f93e09850>
+- 跨链资产标准：<https://ethereum-magicians.org/t/outlining-a-standard-interface-for-cross-domain-erc20-transfers/6151/2>
+- <https://github.com/hop-exchange/contracts/blob/master/assets/Hop_Transfer_Diagrams.jpg>
+- <https://blog.dodoex.io/%E8%B7%A8%E9%93%BE%E6%BC%AB%E8%B0%88-%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%9016%E4%B8%AA%E8%B7%A8%E9%93%BE%E6%96%B9%E6%A1%88%E6%9D%83%E8%A1%A1-a4e98d248eb2>
+- op and zksync ：
+  - Op standardBridge: <https://github.com/ethereum-optimism/optimism/blob/65ec61dde94ffa93342728d324fecf474d228e1f/packages/contracts-bedrock/contracts/universal/StandardBridge.sol>
+  - Standard bridge: <https://medium.com/onther-tech/fast-withdrawals-in-optimistic-rollups-part-1-6fbb93abf1c3>
+- Liquidity provider（ fast withdrawal）<https://medium.com/tokamak-network/fast-withdrawals-in-optimistic-rollups-part-2-db27426d04af>

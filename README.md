@@ -12,7 +12,7 @@
 
 ## 课程概览
 
-- **课程形式**: 视频直播课程 + 代码示例 + 线上workshop
+- **课程形式**: 视频直播课程 + 代码示例 + 线上 workshop
 - **课程时长**: 6 周
 - **课程目标:** 通过学习本课程，学习者将理解 zkSycn Era 的工作原理，并有能力在 ZKsync Era 网络上部署 DApp。 帮助更多用户使用 ZKsync Era。
 
@@ -31,7 +31,7 @@
 - **EIP-4337 概述**: 介绍 EIP-4337 及其工作原理。
 - **ZKsync Era 中的 AA 机制**: 介绍 ZKsync Era 中的账户抽象（AA）机制，详细说明其操作原理和工作流程.
 - **原生 AA 与 EIP-4337 的比较**: 比较 ZKsync Era 中原生 AA 与 EIP-4337 的差异.
-- **费用模型与Paymaster**: 介绍 ZKsync Era 中账户抽象的费用模型以及Paymaster.
+- **费用模型与 Paymaster**: 介绍 ZKsync Era 中账户抽象的费用模型以及 Paymaster.
 
 [video](https://www.youtube.com/watch?v=gGTnBRnSFh8&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=2) | [Doc](./Lesson02/README.md)
 
@@ -55,11 +55,13 @@
 
 - **ZK red packet**: 如何在 ZKsync Era 上部署 ZK Redpacket (contracts + scripts).
 
-[video]() | [Doc](./Lesson05/README.md)
+[video](https://www.youtube.com/watch?v=n5S8VUNfnYM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=6&pp=iAQB) | [Doc](./Lesson05/README.md)
 
 ### Lesson 6: DApp 部署 3
 
 - **rollup bridge**: 如何在 ZKsync Era 上部署 Rollup Bridge.
+
+[video](https://www.youtube.com/watch?v=n5S8VUNfnYM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=6&pp=iAQB) | [Doc](./Lesson06/README.md)
 
 </br>
 
@@ -69,7 +71,7 @@
 
 - **Boojum**: Boojum 原理 电路算术化
   - [video](https://www.youtube.com/watch?v=MrOLmEmlBfM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=1) | [Doc](./boojum-01/README.md)
-- **Plonk and Plonky2**: Plonk和Plonky2技术的技术原理。
+- **Plonk and Plonky2**: Plonk 和 Plonky2 技术的技术原理。
 
 ### Lesson 8: Boojum 原理 2
 
@@ -82,6 +84,12 @@
 - **Boojum 深入**: FFT
 
 [video p1](https://www.youtube.com/watch?v=JAfwbs_Ymnk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=9) | [video p2](https://www.youtube.com/watch?v=BDLOuGmb7mk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=10) | [Doc](./boojum-02/README.md)
+
+### Lesson 10: Boojum 原理 4
+
+- **Boojum 深入**: FRI 原理
+
+[video p1](https://www.youtube.com/watch?v=tNPV3MkRf7w&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=12&pp=iAQB) | [video p2](https://www.youtube.com/watch?v=nNXx2EqQ2AI&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=13&pp=iAQB) | [Doc1](./boojum-04/boojum-fri-src.md) | [Doc2](./boojum-04/boojum-lde-src.md)
 
 ## **Course Overview**
 
@@ -127,6 +135,8 @@
 
 - **ZK red packet**: Develop a ZK redpacket on ZKsync Era.
 
+[video](https://www.youtube.com/watch?v=n5S8VUNfnYM&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=6&pp=iAQB) | [Doc](./Lesson05/README.md)
+
 ### Lesson 6: DApp Development 3
 
 - **rollup bridge**: How to develop a cross rollup bridge on ZKsync Era.
@@ -152,6 +162,12 @@
 - **Inside Boojum**: FFT
 
 [video p1](https://www.youtube.com/watch?v=JAfwbs_Ymnk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=9) | [video p2](https://www.youtube.com/watch?v=BDLOuGmb7mk&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=10) | [Doc](./boojum-02/README.md)
+
+### Lesson 10: Principles of Boojum 4
+
+- **Inside Boojum**: FRI
+
+[video p1](https://www.youtube.com/watch?v=tNPV3MkRf7w&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=12&pp=iAQB) | [video p2](https://www.youtube.com/watch?v=nNXx2EqQ2AI&list=PLgPVMJY4tnFNK260S6thZqEAXJhtcgHaW&index=13&pp=iAQB) | [Doc1](./boojum-04/boojum-fri-src.md) | [Doc2](./boojum-04/boojum-lde-src.md)
 
 ## Reference
 
